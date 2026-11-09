@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>اسکنر و تحلیل ارز دیجیتال</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2e;--panel2:#18223b;--line:#26324f;--text:#e5e9f2;--mute:#8b96b0;
+--green:#22c55e;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;--violet:#8b5cf6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.75 Tahoma,"Segoe UI",sans-serif}
+header{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:17px;margin:0 0 0 8px}
+.pill{padding:3px 10px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);font-size:12px;color:var(--mute)}
+.pill.ok{color:var(--green);border-color:#14532d}.pill.warn{color:var(--amber);border-color:#78350f}.pill.bad{color:var(--red);border-color:#7f1d1d}
+button,select,input{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 12px}
+button{cursor:pointer}button:hover{border-color:var(--blue)}
+button.primary{background:var(--blue);border-color:var(--blue)}
+button.on{background:#14532d;border-color:var(--green)}
+.spacer{flex:1}
+nav{display:flex;gap:4px;padding:6px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+nav button{border:none;background:none;color:var(--mute);border-radius:8px}
+nav button.act{background:var(--panel2);color:var(--text)}
+main{padding:14px;max-width:1700px;margin:auto}
+.tab{display:none}.tab.act{display:block}
+.grid{display:grid;gap:12px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g2{grid-template-columns:1fr 1fr}
+@media(max-width:1100px){.g2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--mute);font-weight:normal;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.card h2{margin:0;font-size:20px}
+.big{font-size:22px;font-weight:bold}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.mute{color:var(--mute)}.blue{color:#60a5fa}
+.badge{display:inline-block;padding:1px 9px;border-radius:6px;font-size:12px;font-weight:bold}
+.b-long{background:#14532d;color:#bbf7d0}.b-short{background:#7f1d1d;color:#fecaca}.b-range{background:#3f3f46;color:#e4e4e7}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--mute);font-weight:normal;position:sticky;top:0;background:var(--panel)}
+tr.click{cursor:pointer}tr.click:hover{background:var(--panel2)}
+.num{direction:ltr;unicode-bidi:isolate;font-family:Consolas,monospace}
+span.num,b.num{display:inline-block}
+.scroll{max-height:440px;overflow:auto}
+.empty{padding:40px;text-align:center;color:var(--mute)}
+/* layout */
+.layout{display:grid;grid-template-columns:290px 1fr;gap:12px;align-items:start}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}}
+.wl{position:sticky;top:10px;max-height:calc(100vh - 140px);overflow:auto;padding:8px}
+.wl-item{padding:9px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent;margin-bottom:4px}
+.wl-item:hover{background:var(--panel2)}
+.wl-item.act{background:var(--panel2);border-color:var(--blue)}
+.wl-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.wl-sym{font-weight:bold}
+.wl-st{font-size:12px;margin-top:2px}
+.st-sig{color:#4ade80;font-weight:bold}.st-zone{color:var(--amber)}.st-near{color:#93c5fd}.st-wait{color:var(--mute)}.st-open{color:#fbbf24}
+.report p{margin:0 0 8px}
+.chartbox{position:relative;height:430px;border-radius:10px;overflow:hidden;background:var(--panel2)}
+.chartbox.small{height:320px}
+.chartbox canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.cinfo{position:absolute;top:6px;left:6px;font-size:11px;background:#0b1020cc;padding:2px 8px;border-radius:6px;direction:ltr;font-family:Consolas,monospace;pointer-events:none}
+.scen{border-right:4px solid var(--line)}
+.scen.main{border-right-color:var(--blue)}
+.scen.off{opacity:.6}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.kv div{background:var(--panel2);border-radius:8px;padding:6px 8px}
+.kv span{display:block;color:var(--mute);font-size:12px}
+.chk{list-style:none;padding:0;margin:6px 0}
+.chk li{padding:3px 0}
+.signal{border:2px solid var(--green);background:linear-gradient(135deg,#0f2a1a,#121a2e)}
+.signal.short{border-color:var(--red);background:linear-gradient(135deg,#2a0f12,#121a2e)}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.toolbar label{display:flex;gap:4px;align-items:center;color:var(--mute);font-size:13px}
+#chartWrap{position:relative;height:640px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+#chartWrap canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.set-group h4{margin:0 0 8px;color:var(--blue);font-size:13px}
+.set-row{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;padding:3px 0}
+.set-row input[type=number]{width:110px;direction:ltr}
+#replay{width:100%;direction:ltr}
+canvas.eq{width:100%;height:220px;display:block}
+details summary{cursor:pointer;color:var(--mute)}
+.addr{font-family:Consolas,monospace;direction:ltr;display:inline-block}
+.bar{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden;display:flex;min-width:120px}
+.bar i{display:block;height:100%}
+.alert-item{padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>اسکنر و تحلیل چندتایم‌فریمی <small class="mute" style="font-size:11px">v2.0</small></h1>
+  <span id="dataPill" class="pill">دیتا بارگذاری نشده</span>
+  <span id="srcPill" class="pill" style="display:none"></span>
+  <div class="spacer"></div>
+  <button id="btnReload">🔄 بارگذاری مجدد</button>
+  <button id="btnAuto">⏱ خودکار: خاموش</button>
+  <label class="pill" style="cursor:pointer">📂 فایل دستی<input id="fileIn" type="file" accept=".js,.json" hidden></label>
+</header>
+<nav>
+  <button data-tab="ana" class="act">تحلیل</button>
+  <button data-tab="lv">هفتگی (کم‌نوسان)</button>
+  <button data-tab="hl">تریدرها (Hyperliquid)</button>
+  <button data-tab="chart">نمودار تعاملی</button>
+  <button data-tab="bt">بک‌تست</button>
+  <button data-tab="set">تنظیمات</button>
+  <button data-tab="help">راهنما</button>
+</nav>
+<main>
+  <section id="tab-ana" class="tab act">
+    <div class="layout">
+      <aside class="card wl" id="watchlist"><div class="empty">بدون دیتا</div></aside>
+      <div id="report" class="report"><div class="empty">فایل ScannerData.js را کنار این فایل قرار دهید یا با «فایل دستی» بارگذاری کنید.</div></div>
+    </div>
+  </section>
+
+  <section id="tab-lv" class="tab"><div id="lvBody"><div class="empty">بدون دیتا</div></div></section>
+  <section id="tab-hl" class="tab"><div id="hlBody"></div></section>
+  <section id="tab-chart" class="tab">
+    <div class="toolbar">
+      <b id="chartSym"></b>
+      <select id="tfSel"><option value="1day">روزانه</option><option value="4hour">۴ ساعته</option><option value="15min" selected>۱۵ دقیقه</option></select>
+      <label><input type="checkbox" id="optZones" checked> سطوح</label>
+      <label><input type="checkbox" id="optChan" checked> کانال روزانه</label>
+      <label><input type="checkbox" id="optEma" checked> EMA</label>
+      <label><input type="checkbox" id="optTrades" checked> معاملات بک‌تست</label>
+      <label><input type="checkbox" id="optVol" checked> حجم</label>
+      <button id="btnFit">نمای کامل</button>
+      <span class="mute" style="font-size:12px">اسکرول = زوم · کشیدن = جابه‌جایی</span>
+    </div>
+    <div id="chartWrap"><canvas id="chart"></canvas><div class="cinfo" id="chartInfo"></div></div>
+  </section>
+
+  <section id="tab-bt" class="tab">
+    <div class="toolbar">
+      <button id="btnBt" class="primary">▶ اجرای مجدد بک‌تست</button>
+      <span class="mute" style="font-size:12px">قوانین همان قوانین اسکنر است، کندل به کندل و بدون نگاه به آینده. اگر حد ضرر و سود در یک کندل ۱۵ دقیقه خورده شوند، ضرر حساب می‌شود.</span>
+    </div>
+    <div id="btBody"><div class="empty">بدون دیتا</div></div>
+  </section>
+
+  <section id="tab-set" class="tab">
+    <div class="toolbar">
+      <button id="btnSaveSet" class="primary">ذخیره و اجرای مجدد</button>
+      <button id="btnResetSet">بازگشت به پیش‌فرض</button>
+    </div>
+    <div class="grid g2" id="setBody"></div>
+  </section>
+
+  <section id="tab-help" class="tab"><div class="card" id="helpBody"></div></section>
+</main>
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+/*__UI__*/
+</script>
+</body>
+</html>

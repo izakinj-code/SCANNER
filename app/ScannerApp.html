@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>اسکنر و تحلیل ارز دیجیتال</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2e;--panel2:#18223b;--line:#26324f;--text:#e5e9f2;--mute:#8b96b0;
+--green:#22c55e;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;--violet:#8b5cf6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.75 Tahoma,"Segoe UI",sans-serif}
+header{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:17px;margin:0 0 0 8px}
+.pill{padding:3px 10px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);font-size:12px;color:var(--mute)}
+.pill.ok{color:var(--green);border-color:#14532d}.pill.warn{color:var(--amber);border-color:#78350f}.pill.bad{color:var(--red);border-color:#7f1d1d}
+button,select,input{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 12px}
+button{cursor:pointer}button:hover{border-color:var(--blue)}
+button.primary{background:var(--blue);border-color:var(--blue)}
+button.on{background:#14532d;border-color:var(--green)}
+.spacer{flex:1}
+nav{display:flex;gap:4px;padding:6px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+nav button{border:none;background:none;color:var(--mute);border-radius:8px}
+nav button.act{background:var(--panel2);color:var(--text)}
+main{padding:14px;max-width:1700px;margin:auto}
+.tab{display:none}.tab.act{display:block}
+.grid{display:grid;gap:12px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g2{grid-template-columns:1fr 1fr}
+@media(max-width:1100px){.g2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--mute);font-weight:normal;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.card h2{margin:0;font-size:20px}
+.big{font-size:22px;font-weight:bold}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.mute{color:var(--mute)}.blue{color:#60a5fa}
+.badge{display:inline-block;padding:1px 9px;border-radius:6px;font-size:12px;font-weight:bold}
+.b-long{background:#14532d;color:#bbf7d0}.b-short{background:#7f1d1d;color:#fecaca}.b-range{background:#3f3f46;color:#e4e4e7}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--mute);font-weight:normal;position:sticky;top:0;background:var(--panel)}
+tr.click{cursor:pointer}tr.click:hover{background:var(--panel2)}
+.num{direction:ltr;unicode-bidi:isolate;font-family:Consolas,monospace}
+span.num,b.num{display:inline-block}
+.scroll{max-height:440px;overflow:auto}
+.empty{padding:40px;text-align:center;color:var(--mute)}
+/* layout */
+.layout{display:grid;grid-template-columns:290px 1fr;gap:12px;align-items:start}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}}
+.wl{position:sticky;top:10px;max-height:calc(100vh - 140px);overflow:auto;padding:8px}
+.wl-item{padding:9px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent;margin-bottom:4px}
+.wl-item:hover{background:var(--panel2)}
+.wl-item.act{background:var(--panel2);border-color:var(--blue)}
+.wl-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.wl-sym{font-weight:bold}
+.wl-st{font-size:12px;margin-top:2px}
+.st-sig{color:#4ade80;font-weight:bold}.st-zone{color:var(--amber)}.st-near{color:#93c5fd}.st-wait{color:var(--mute)}.st-open{color:#fbbf24}
+.report p{margin:0 0 8px}
+.chartbox{position:relative;height:430px;border-radius:10px;overflow:hidden;background:var(--panel2)}
+.chartbox.small{height:320px}
+.chartbox canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.cinfo{position:absolute;top:6px;left:6px;font-size:11px;background:#0b1020cc;padding:2px 8px;border-radius:6px;direction:ltr;font-family:Consolas,monospace;pointer-events:none}
+.scen{border-right:4px solid var(--line)}
+.scen.main{border-right-color:var(--blue)}
+.scen.off{opacity:.6}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.kv div{background:var(--panel2);border-radius:8px;padding:6px 8px}
+.kv span{display:block;color:var(--mute);font-size:12px}
+.chk{list-style:none;padding:0;margin:6px 0}
+.chk li{padding:3px 0}
+.signal{border:2px solid var(--green);background:linear-gradient(135deg,#0f2a1a,#121a2e)}
+.signal.short{border-color:var(--red);background:linear-gradient(135deg,#2a0f12,#121a2e)}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.toolbar label{display:flex;gap:4px;align-items:center;color:var(--mute);font-size:13px}
+#chartWrap{position:relative;height:640px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+#chartWrap canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.set-group h4{margin:0 0 8px;color:var(--blue);font-size:13px}
+.set-row{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;padding:3px 0}
+.set-row input[type=number]{width:110px;direction:ltr}
+#replay{width:100%;direction:ltr}
+canvas.eq{width:100%;height:220px;display:block}
+details summary{cursor:pointer;color:var(--mute)}
+.addr{font-family:Consolas,monospace;direction:ltr;display:inline-block}
+.bar{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden;display:flex;min-width:120px}
+.bar i{display:block;height:100%}
+.alert-item{padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>اسکنر و تحلیل چندتایم‌فریمی <small class="mute" style="font-size:11px">v4.1</small></h1>
+  <span id="dataPill" class="pill">دیتا بارگذاری نشده</span>
+  <span id="srcPill" class="pill" style="display:none"></span>
+  <div class="spacer"></div>
+  <button id="btnReload">🔄 بارگذاری مجدد</button>
+  <button id="btnAuto">⏱ خودکار: خاموش</button>
+  <label class="pill" style="cursor:pointer">📂 فایل دستی<input id="fileIn" type="file" accept=".js,.json" hidden></label>
+</header>
+<nav>
+  <button data-tab="ana" class="act">تحلیل</button>
+  <button data-tab="lv">هفتگی (کم‌نوسان)</button>
+  <button data-tab="hl">تریدرها (Hyperliquid)</button>
+  <button data-tab="chart">نمودار تعاملی</button>
+  <button data-tab="bt">بک‌تست</button>
+  <button data-tab="set">تنظیمات</button>
+  <button data-tab="help">راهنما</button>
+</nav>
+<main>
+  <section id="tab-ana" class="tab act">
+    <div class="layout">
+      <aside class="card wl" id="watchlist"><div class="empty">بدون دیتا</div></aside>
+      <div id="report" class="report"><div class="empty">فایل ScannerData.js را کنار این فایل قرار دهید یا با «فایل دستی» بارگذاری کنید.</div></div>
+    </div>
+  </section>
+
+  <section id="tab-lv" class="tab"><div id="lvBody"><div class="empty">بدون دیتا</div></div></section>
+  <section id="tab-hl" class="tab"><div id="hlBody"></div></section>
+  <section id="tab-chart" class="tab">
+    <div class="toolbar">
+      <b id="chartSym"></b>
+      <select id="tfSel"><option value="1day">روزانه</option><option value="4hour">۴ ساعته</option><option value="15min" selected>۱۵ دقیقه</option></select>
+      <label><input type="checkbox" id="optZones" checked> سطوح</label>
+      <label><input type="checkbox" id="optChan" checked> کانال روزانه</label>
+      <label><input type="checkbox" id="optEma" checked> EMA</label>
+      <label><input type="checkbox" id="optTrades" checked> معاملات بک‌تست</label>
+      <label><input type="checkbox" id="optVol" checked> حجم</label>
+      <button id="btnFit">نمای کامل</button>
+      <span class="mute" style="font-size:12px">اسکرول = زوم · کشیدن = جابه‌جایی</span>
+    </div>
+    <div id="chartWrap"><canvas id="chart"></canvas><div class="cinfo" id="chartInfo"></div></div>
+  </section>
+
+  <section id="tab-bt" class="tab">
+    <div class="toolbar">
+      <button id="btnBt" class="primary">▶ اجرای مجدد بک‌تست</button>
+      <span class="mute" style="font-size:12px">قوانین همان قوانین اسکنر است، کندل به کندل و بدون نگاه به آینده. اگر حد ضرر و سود در یک کندل ۱۵ دقیقه خورده شوند، ضرر حساب می‌شود.</span>
+    </div>
+    <div id="btBody"><div class="empty">بدون دیتا</div></div>
+  </section>
+
+  <section id="tab-set" class="tab">
+    <div class="toolbar">
+      <button id="btnSaveSet" class="primary">ذخیره و اجرای مجدد</button>
+      <button id="btnResetSet">بازگشت به پیش‌فرض</button>
+    </div>
+    <div class="grid g2" id="setBody"></div>
+  </section>
+
+  <section id="tab-help" class="tab"><div class="card" id="helpBody"></div></section>
+</main>
+<script>
+/* =====================================================================
+   SCANNER ENGINE v1  —  multi-timeframe (1day / 4hour / 15min)
+   Pure functions, no DOM. Used by the app for live scan + backtest.
+   Row format from ScannerData.js : [ts, open, high, low, close, volume, turnover]
+   ===================================================================== */
+const Engine = (() => {
+
+  const DEFAULTS = {
+    // --- Daily trend
+    dEmaFast: 20, dEmaSlow: 50, dSlopeBars: 5, dSlopeMin: 0.05,
+    // --- Daily levels & channel
+    pivotLR: 3, levelLookback: 150, levelClusterAtr: 0.6, levelMaxDistAtr: 4,
+    chanLen: 60,
+    // --- 4H location
+    h4ZoneAtr: 1.2, h4TouchBars: 6, h4ChanLow: 0.25, h4ChanHigh: 0.75,
+    // --- Volume
+    volSma: 20, volFast: 10, volSlow: 30, rvolMin: 1.2,
+    // --- 15m trigger
+    m15Ema: 20, m15BreakBars: 3, m15SetupBars: 16,
+    // --- Risk
+    slAtr4h: 0.5, maxRiskPct: 6, minRR: 2, maxRR: 4, maxTradeBars: 288, feePct: 0.1, cooldownBars: 4,
+    // --- Filter
+    minScore: 60, allowCounter: false, enableLong: true, enableShort: true,
+    // --- strategy selector + trend strategy params
+    strategy: 'trend', trN: 40, trK: 3, trWin: 24, trTouchAtr: 0.25, trFailAtr: 1.5, trPartialR: 0,
+    // --- v1.1 improvements (0 / false = off)
+    zoneLockDays: 4,      // after a SL, block same-direction entries in that price band for N days
+    partialR: 0,          // close 50% at this R and move SL to entry (0 = off)
+    requireConfirm: false // 4H confirmation candle is mandatory
+  };
+
+  const TF_SEC = { '1day': 86400, '4hour': 14400, '15min': 900 };
+
+  /* ------------------------------------------------------------ math */
+  function ema(src, n) {
+    const out = new Array(src.length).fill(NaN);
+    if (src.length < n) return out;
+    let s = 0;
+    for (let i = 0; i < n; i++) s += src[i];
+    out[n - 1] = s / n;
+    const k = 2 / (n + 1);
+    for (let i = n; i < src.length; i++) out[i] = src[i] * k + out[i - 1] * (1 - k);
+    return out;
+  }
+  function sma(src, n) {
+    const out = new Array(src.length).fill(NaN);
+    let s = 0;
+    for (let i = 0; i < src.length; i++) {
+      s += src[i];
+      if (i >= n) s -= src[i - n];
+      if (i >= n - 1) out[i] = s / n;
+    }
+    return out;
+  }
+  function atr(h, l, c, n) {
+    const out = new Array(c.length).fill(NaN);
+    if (c.length <= n) return out;
+    const tr = c.map((_, i) => i === 0 ? h[0] - l[0] :
+      Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1])));
+    let s = 0;
+    for (let i = 1; i <= n; i++) s += tr[i];
+    out[n] = s / n;
+    for (let i = n + 1; i < c.length; i++) out[i] = (out[i - 1] * (n - 1) + tr[i]) / n;
+    return out;
+  }
+  function linreg(ys) { // x = 0..n-1
+    const n = ys.length;
+    let sx = 0, sy = 0, sxy = 0, sxx = 0;
+    for (let i = 0; i < n; i++) { sx += i; sy += ys[i]; sxy += i * ys[i]; sxx += i * i; }
+    const d = n * sxx - sx * sx;
+    const slope = d === 0 ? 0 : (n * sxy - sx * sy) / d;
+    return { slope, intercept: (sy - slope * sx) / n };
+  }
+
+  /* ------------------------------------------------------- prepare */
+  function prepSeries(rows, P) {
+    const S = { t: [], o: [], h: [], l: [], c: [], v: [], q: [] };
+    for (const r of rows) {
+      S.t.push(r[0]); S.o.push(r[1]); S.h.push(r[2]); S.l.push(r[3]);
+      S.c.push(r[4]); S.v.push(r[5]); S.q.push(r[6] || r[5] * r[4]);
+    }
+    S.n = S.t.length;
+    S.atr = atr(S.h, S.l, S.c, 14);
+    S.qSma = sma(S.q, P.volSma);
+    S.qFast = sma(S.q, P.volFast);
+    S.qSlow = sma(S.q, P.volSlow);
+    const obv = [0];
+    for (let i = 1; i < S.n; i++) obv.push(obv[i - 1] + (S.c[i] > S.c[i - 1] ? S.q[i] : S.c[i] < S.c[i - 1] ? -S.q[i] : 0));
+    S.obv = obv;
+    // pivots (confirmed R bars later)
+    const R = P.pivotLR;
+    S.ph = new Array(S.n).fill(false); S.pl = new Array(S.n).fill(false);
+    for (let j = R; j < S.n - R; j++) {
+      let isH = true, isL = true;
+      for (let k = j - R; k <= j + R; k++) {
+        if (k === j) continue;
+        if (k < j ? S.h[k] >= S.h[j] : S.h[k] > S.h[j]) isH = false;
+        if (k < j ? S.l[k] <= S.l[j] : S.l[k] < S.l[j]) isL = false;
+      }
+      S.ph[j] = isH; S.pl[j] = isL;
+    }
+    return S;
+  }
+
+  function prepare(symbolData, params) {
+    const P = Object.assign({}, DEFAULTS, params || {});
+    for (const tf of ['1day', '4hour', '15min'])
+      if (!symbolData[tf] || symbolData[tf].length < 30) throw new Error('دیتای کافی برای ' + tf + ' نیست');
+    const D = prepSeries(symbolData['1day'], P);
+    const H = prepSeries(symbolData['4hour'], P);
+    const M = prepSeries(symbolData['15min'], P);
+    D.emaF = ema(D.c, P.dEmaFast); D.emaS = ema(D.c, P.dEmaSlow);
+    H.ema = ema(H.c, 20);
+    M.ema = ema(M.c, P.m15Ema);
+    return { P, D, H, M, cacheD: new Map(), cacheH: new Map() };
+  }
+
+  // last index whose candle is CLOSED at time T
+  function lastClosed(S, sec, T) {
+    let lo = 0, hi = S.n - 1, ans = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (S.t[mid] + sec <= T) { ans = mid; lo = mid + 1; } else hi = mid - 1;
+    }
+    return ans;
+  }
+
+  /* ------------------------------------------------ STAGE 1+2 daily */
+  function analyzeDaily(ctx, i) {
+    if (ctx.cacheD.has(i)) return ctx.cacheD.get(i);
+    const { P, D } = ctx, R = P.pivotLR;
+    const res = { i, ok: false };
+    const need = Math.max(P.dEmaSlow, P.chanLen, 20);
+    if (i < need) { res.reason = 'دیتای روزانه برای گرم شدن اندیکاتورها کافی نیست (' + (i + 1) + '/' + (need + 1) + ')'; ctx.cacheD.set(i, res); return res; }
+
+    const c = D.c[i], a = D.atr[i], ef = D.emaF[i], es = D.emaS[i];
+    const slope = (ef - D.emaF[i - P.dSlopeBars]) / a;
+    // confirmed pivots
+    const PH = [], PL = [];
+    for (let j = Math.max(0, i - P.levelLookback); j <= i - R; j++) {
+      if (D.ph[j]) PH.push({ j, p: D.h[j] });
+      if (D.pl[j]) PL.push({ j, p: D.l[j] });
+    }
+    let hh = null, hl = null;
+    if (PH.length >= 2) hh = PH[PH.length - 1].p > PH[PH.length - 2].p;
+    if (PL.length >= 2) hl = PL[PL.length - 1].p > PL[PL.length - 2].p;
+
+    let bull = 0, bear = 0;
+    if (c > ef) bull++; else bear++;
+    if (ef > es) bull++; else bear++;
+    if (slope > P.dSlopeMin) bull++; else if (slope < -P.dSlopeMin) bear++;
+    if (hh === true && hl === true) bull++; else if (hh === false && hl === false) bear++;
+    let trend = 'RANGE';
+    if (bull >= 3 && bull > bear) trend = 'BULL';
+    else if (bear >= 3 && bear > bull) trend = 'BEAR';
+    res.trend = { dir: trend, bull, bear, slope, ema: [ef, es], hh, hl, strength: Math.max(bull, bear) / 4 };
+
+    // ---- level zones (cluster pivots)
+    const cand = PH.map(x => ({ p: x.p, j: x.j, k: 'H' })).concat(PL.map(x => ({ p: x.p, j: x.j, k: 'L' })))
+      .sort((x, y) => x.p - y.p);
+    const tol = P.levelClusterAtr * a;
+    const zones = [];
+    for (const x of cand) {
+      const z = zones[zones.length - 1];
+      if (z && x.p - z.hi <= tol) { z.hi = Math.max(z.hi, x.p); z.touches++; z.last = Math.max(z.last, x.j); z.pts.push(x); }
+      else zones.push({ lo: x.p, hi: x.p, touches: 1, last: x.j, pts: [x] });
+    }
+    for (const z of zones) {
+      const minW = 0.25 * a;
+      if (z.hi - z.lo < minW) { const m = (z.hi + z.lo) / 2; z.lo = m - minW / 2; z.hi = m + minW / 2; }
+      z.mid = (z.lo + z.hi) / 2;
+      z.dist = (z.mid - c) / a;
+      z.near = Math.abs(z.dist) <= P.levelMaxDistAtr;
+      delete z.pts;
+    }
+    res.zones = zones;
+
+    // ---- regression channel on closes
+    const L = P.chanLen, ys = D.c.slice(i - L + 1, i + 1);
+    const lr = linreg(ys);
+    let up = -Infinity, dn = Infinity;
+    for (let x = 0; x < L; x++) {
+      const base = lr.intercept + lr.slope * x;
+      up = Math.max(up, D.h[i - L + 1 + x] - base);
+      dn = Math.min(dn, D.l[i - L + 1 + x] - base);
+    }
+    res.chan = {
+      startIdx: i - L + 1, endIdx: i, slope: lr.slope, intercept: lr.intercept, up, dn,
+      slopePctDay: lr.slope / c * 100,
+      at(x) { const b = this.intercept + this.slope * x; return { upper: b + this.up, lower: b + this.dn, mid: b }; }
+    };
+    res.atr = a; res.close = c; res.ok = true;
+    ctx.cacheD.set(i, res);
+    return res;
+  }
+
+  /* ------------------------------------------- STAGE 3+4 4h location */
+  function analyze4h(ctx, k, d) {
+    const key = k;
+    if (ctx.cacheH.has(key)) return ctx.cacheH.get(key);
+    const { P, H } = ctx;
+    const res = { k, ok: false };
+    if (k < Math.max(P.volSlow, 25)) { res.reason = 'دیتای ۴ساعته کافی نیست'; ctx.cacheH.set(key, res); return res; }
+    const c = H.c[k], a = H.atr[k];
+
+    // daily channel position using 4h close (extrapolate channel by fraction of day)
+    const dayFrac = (H.t[k] + 14400 - (ctx.D.t[d.i] + 86400)) / 86400;
+    const ch = d.chan.at(d.chan.endIdx - d.chan.startIdx + dayFrac);
+    const chanPos = (c - ch.lower) / (ch.upper - ch.lower);
+
+    const near = d.zones.filter(z => z.near);
+    // support: zone whose low is below price; take the highest
+    const sup = near.filter(z => z.lo <= c).sort((x, y) => y.hi - x.hi)[0] || null;
+    const resZ = near.filter(z => z.hi >= c).sort((x, y) => x.lo - y.lo)[0] || null;
+
+    const from = Math.max(0, k - P.h4TouchBars + 1);
+    let minL = Infinity, maxH = -Infinity;
+    for (let x = from; x <= k; x++) { minL = Math.min(minL, H.l[x]); maxH = Math.max(maxH, H.h[x]); }
+
+    const long = { zone: sup, viaZone: false, viaChan: false, dist: null, touched: false };
+    if (sup) {
+      long.dist = Math.max(0, c - sup.hi) / a;
+      long.touched = minL <= sup.hi + 0.25 * a;
+      long.broken = c < sup.lo - 0.25 * a;
+      long.viaZone = long.dist <= P.h4ZoneAtr && long.touched && !long.broken;
+    }
+    long.viaChan = chanPos <= P.h4ChanLow && chanPos > -0.15;
+    long.ok = long.viaZone || long.viaChan;
+
+    const short = { zone: resZ, viaZone: false, viaChan: false, dist: null, touched: false };
+    if (resZ) {
+      short.dist = Math.max(0, resZ.lo - c) / a;
+      short.touched = maxH >= resZ.lo - 0.25 * a;
+      short.broken = c > resZ.hi + 0.25 * a;
+      short.viaZone = short.dist <= P.h4ZoneAtr && short.touched && !short.broken;
+    }
+    short.viaChan = chanPos >= P.h4ChanHigh && chanPos < 1.15;
+    short.ok = short.viaZone || short.viaChan;
+
+    // 4h confirmation candle
+    const o = H.o[k], hi = H.h[k], lo = H.l[k], rng = Math.max(hi - lo, 1e-12);
+    const po = H.o[k - 1], pc = H.c[k - 1];
+    const lowWick = (Math.min(o, c) - lo) / rng, upWick = (hi - Math.max(o, c)) / rng;
+    long.confirm = (lowWick >= 0.4 && c > (hi + lo) / 2) ? 'پین‌بار صعودی' :
+      (c > o && pc < po && c >= po && o <= pc) ? 'اینگالفینگ صعودی' :
+        (c > H.ema[k] && pc <= H.ema[k - 1]) ? 'عبور از EMA20' : null;
+    short.confirm = (upWick >= 0.4 && c < (hi + lo) / 2) ? 'پین‌بار نزولی' :
+      (c < o && pc > po && c <= po && o >= pc) ? 'اینگالفینگ نزولی' :
+        (c < H.ema[k] && pc >= H.ema[k - 1]) ? 'شکست EMA20 به پایین' : null;
+
+    // volume (turnover)
+    let g = 0, r = 0;
+    for (let x = Math.max(0, k - 19); x <= k; x++) { if (H.c[x] >= H.o[x]) g += H.q[x]; else r += H.q[x]; }
+    const obvSeg = H.obv.slice(Math.max(0, k - 19), k + 1);
+    const obvSlope = linreg(obvSeg).slope / (H.qSma[k] || 1);
+    res.vol = { trend: H.qFast[k] / H.qSlow[k], balance: r > 0 ? g / r : 9, obvSlope };
+
+    Object.assign(res, { ok: true, close: c, atr: a, chanPos, chanLine: ch, long, short });
+    ctx.cacheH.set(key, res);
+    return res;
+  }
+
+  function volScore(v, dir) {
+    let s = 0;
+    if (v.trend > 1) s += 0.3;
+    if (dir === 'LONG') { if (v.balance > 1) s += 0.35; if (v.obvSlope > 0) s += 0.35; }
+    else { if (v.balance < 1) s += 0.35; if (v.obvSlope < 0) s += 0.35; }
+    return s;
+  }
+
+  /* ------------------------------------------------ STAGE 5 trigger */
+  function trigger15(ctx, m, h4, d, dir) {
+    const { P, M } = ctx;
+    const side = dir === 'LONG' ? h4.long : h4.short;
+    const out = { ok: false, checks: {} };
+    if (m < Math.max(P.m15SetupBars, P.volSma) + 2) return out;
+    const c = M.c[m], o = M.o[m];
+    let minL = Infinity, maxH = -Infinity;
+    for (let x = m - P.m15SetupBars + 1; x <= m; x++) { minL = Math.min(minL, M.l[x]); maxH = Math.max(maxH, M.h[x]); }
+    let brk = dir === 'LONG' ? -Infinity : Infinity;
+    for (let x = m - P.m15BreakBars; x < m; x++) brk = dir === 'LONG' ? Math.max(brk, M.h[x]) : Math.min(brk, M.l[x]);
+    const rvol = M.q[m] / (M.qSma[m - 1] || 1);
+    const pc = M.c[m - 1], po = M.o[m - 1];
+    const a4 = h4.atr;
+
+    // reference line for the pullback (zone edge or channel line)
+    let ref;
+    if (dir === 'LONG') ref = side.viaZone ? side.zone.hi : h4.chanLine.lower + 0.25 * (h4.chanLine.upper - h4.chanLine.lower);
+    else ref = side.viaZone ? side.zone.lo : h4.chanLine.upper - 0.25 * (h4.chanLine.upper - h4.chanLine.lower);
+
+    const ck = out.checks;
+    if (dir === 'LONG') {
+      ck.pullback = minL <= ref + 0.25 * a4;
+      ck.breakout = c > brk;
+      ck.ema = c > M.ema[m];
+      ck.pattern = (c > o && pc < po && c >= po && o <= pc) ? 'اینگالفینگ' :
+        ((Math.min(o, c) - M.l[m]) / Math.max(M.h[m] - M.l[m], 1e-12) >= 0.5 && c > o) ? 'چکش' : null;
+    } else {
+      ck.pullback = maxH >= ref - 0.25 * a4;
+      ck.breakout = c < brk;
+      ck.ema = c < M.ema[m];
+      ck.pattern = (c < o && pc > po && c <= po && o >= pc) ? 'اینگالفینگ' :
+        ((M.h[m] - Math.max(o, c)) / Math.max(M.h[m] - M.l[m], 1e-12) >= 0.5 && c < o) ? 'ستاره دنباله‌دار' : null;
+    }
+    ck.rvol = rvol;
+    ck.breakLevel = brk; ck.emaVal = M.ema[m]; ck.ref = ref;
+    ck.rvolOk = rvol >= P.rvolMin;
+    out.ok = ck.pullback && ck.breakout && ck.ema && ck.rvolOk;
+
+    // ---- risk plan
+    const entry = c;
+    let sl, tp1 = null, tp2 = null, tpFromLevel = false;
+    const above = d.zones.filter(z => z.lo > entry).sort((x, y) => x.lo - y.lo);
+    const below = d.zones.filter(z => z.hi < entry).sort((x, y) => y.hi - x.hi);
+    if (dir === 'LONG') {
+      const base = side.viaZone ? Math.min(minL, side.zone.lo) : minL;
+      sl = base - P.slAtr4h * a4;
+      const risk = entry - sl;
+      const tgt = above.filter(z => z.lo - entry >= 0.5 * risk);
+      if (tgt[0]) { tp1 = tgt[0].lo; tpFromLevel = true; }
+      if (tgt[1]) tp2 = tgt[1].lo;
+      if (!tp1) tp1 = entry + P.minRR * risk;
+      if (!tp2) tp2 = Math.max(tp1, entry + 3 * risk);
+    } else {
+      const base = side.viaZone ? Math.max(maxH, side.zone.hi) : maxH;
+      sl = base + P.slAtr4h * a4;
+      const risk = sl - entry;
+      const tgt = below.filter(z => entry - z.hi >= 0.5 * risk);
+      if (tgt[0]) { tp1 = tgt[0].hi; tpFromLevel = true; }
+      if (tgt[1]) tp2 = tgt[1].hi;
+      if (!tp1) tp1 = entry - P.minRR * risk;
+      if (!tp2) tp2 = Math.min(tp1, entry - 3 * risk);
+    }
+    const risk = Math.abs(entry - sl);
+    if (Math.abs(tp1 - entry) / risk > P.maxRR) { tp1 = entry + Math.sign(tp1 - entry) * P.maxRR * risk; tpFromLevel = false; }
+    const rr = Math.abs(tp1 - entry) / risk;
+    const riskPct = risk / entry * 100;
+    out.plan = { entry, sl, tp1, tp2, rr, riskPct, tpFromLevel };
+    ck.rrOk = rr >= P.minRR - 1e-9;
+    ck.riskOk = riskPct <= P.maxRiskPct && risk > 0;
+    out.ok = out.ok && ck.rrOk && ck.riskOk;
+    return out;
+  }
+
+  /* --------------------------------------------- full evaluation */
+  // evaluates at 15m bar m (closed). Returns stage report + signal
+  function evaluateAt(ctx, m) {
+    const { P, D, H, M } = ctx;
+    const T = M.t[m] + 900;
+    const i = lastClosed(D, 86400, T), k = lastClosed(H, 14400, T);
+    const rep = { time: T, m, i, k, price: M.c[m], stages: [], signal: null, setups: [] };
+    if (i < 0 || k < 0) { rep.error = 'دیتای روزانه/۴ساعته قبل از این زمان وجود ندارد'; return rep; }
+    const d = analyzeDaily(ctx, i);
+    rep.daily = d;
+    if (!d.ok) { rep.error = d.reason; return rep; }
+    const h4 = analyze4h(ctx, k, d);
+    rep.h4 = h4;
+    if (!h4.ok) { rep.error = h4.reason; return rep; }
+
+    const dirs = [];
+    const tr = d.trend.dir;
+    if (P.enableLong && (tr === 'BULL' || tr === 'RANGE' || P.allowCounter)) dirs.push('LONG');
+    if (P.enableShort && (tr === 'BEAR' || tr === 'RANGE' || P.allowCounter)) dirs.push('SHORT');
+
+    for (const dir of dirs) {
+      const side = dir === 'LONG' ? h4.long : h4.short;
+      const locOk = side.ok && (!P.requireConfirm || !!side.confirm);
+      const s = { dir, location: locOk, side };
+      if (locOk) {
+        const trg = trigger15(ctx, m, h4, d, dir);
+        s.trigger = trg;
+        // score
+        const aligned = (dir === 'LONG' && tr === 'BULL') || (dir === 'SHORT' && tr === 'BEAR');
+        const sc = {};
+        sc.trend = aligned ? Math.round(25 * d.trend.strength) : (tr === 'RANGE' ? 12 : 5);
+        sc.location = Math.min(25, (side.viaZone ? 15 + Math.min(10, (side.zone.touches - 1) * 4) : 0) + (side.viaChan ? (side.viaZone ? 5 : 14) : 0));
+        sc.confirm = side.confirm ? (side.confirm.includes('EMA') ? 10 : 15) : 0;
+        const vs = volScore(h4.vol, dir);
+        sc.volume = Math.round(14 * vs + 6 * Math.min(1, Math.max(0, (trg.checks.rvol || 0) - 1)));
+        sc.trigger = trg.ok ? (10 + (trg.checks.pattern ? 5 : 0)) : 0;
+        s.score = sc;
+        s.total = sc.trend + sc.location + sc.confirm + sc.volume + sc.trigger;
+        if (trg.ok && s.total >= P.minScore) {
+          rep.signal = rep.signal && rep.signal.total >= s.total ? rep.signal : Object.assign({ dir, total: s.total, score: sc, time: T }, trg.plan, { pattern: trg.checks.pattern, rvol: trg.checks.rvol });
+        }
+      }
+      rep.setups.push(s);
+    }
+    rep.dirs = dirs;
+    return rep;
+  }
+
+  /* --------------------------------------------------- backtest */
+  function backtest(ctx, opts = {}) {
+    const { P, M } = ctx;
+    const trades = [], locks = [];
+    let open = null, cool = 0;
+    const startM = Math.max(P.m15SetupBars + P.volSma + 2, 0);
+    const fromTs = opts.fromTs || 0;
+    const fee = P.feePct / 100;
+    for (let m = startM; m < M.n; m++) {
+      if (M.t[m] < fromTs) continue;
+      if (open) {
+        const isL = open.dir === 'LONG', risk = open.risk;
+        const fav = (isL ? M.h[m] - open.entry : open.entry - M.l[m]) / risk;
+        open.mfe = Math.max(open.mfe, fav);
+        let exit = null, why = null;
+        if (isL ? M.l[m] <= open.stop : M.h[m] >= open.stop) { exit = open.stop; why = open.partialDone ? 'BE' : 'SL'; }
+        else {
+          if (P.partialR > 0 && !open.partialDone && fav >= P.partialR) {
+            open.partialDone = true;
+            open.partialR = P.partialR - fee * (open.entry + (isL ? open.entry + P.partialR * risk : open.entry - P.partialR * risk)) / risk;
+            open.stop = open.entry;            // move to break-even
+            open.partialPrice = isL ? open.entry + P.partialR * risk : open.entry - P.partialR * risk;
+          }
+          if (isL ? M.h[m] >= open.tp1 : M.l[m] <= open.tp1) { exit = open.tp1; why = 'TP'; }
+          else if (m - open.m >= P.maxTradeBars) { exit = M.c[m]; why = 'TIME'; }
+        }
+        if (exit !== null) {
+          const gross = (isL ? exit - open.entry : open.entry - exit) / risk;
+          const restR = gross - fee * (open.entry + exit) / risk;
+          const R = open.partialDone ? 0.5 * open.partialR + 0.5 * restR : restR;
+          Object.assign(open, { exit, exitTime: M.t[m] + 900, why, R, bars: m - open.m, status: 'CLOSED' });
+          if (why === 'SL' && P.zoneLockDays > 0) {
+            const pad = 0.5 * risk;
+            locks.push({ from: M.t[m] + 900, dir: open.dir, lo: Math.min(open.entry, open.sl) - pad, hi: Math.max(open.entry, open.sl) + pad, until: M.t[m] + P.zoneLockDays * 86400 });
+          }
+          trades.push(open); open = null; cool = P.cooldownBars;
+        }
+        continue;
+      }
+      if (cool > 0) { cool--; continue; }
+      const rep = evaluateAt(ctx, m);
+      if (rep.signal) {
+        const sg = rep.signal, now = M.t[m];
+        const locked = locks.some(l => l.dir === sg.dir && now < l.until && sg.entry >= l.lo && sg.entry <= l.hi);
+        if (locked) continue;
+        open = Object.assign({}, sg, { m, entryTime: rep.time, status: 'OPEN', stop: sg.sl, risk: Math.abs(sg.entry - sg.sl), mfe: 0, partialDone: false });
+      }
+    }
+    if (open) { open.R = null; trades.push(open); }
+    return { trades, stats: stats(trades), locks };
+  }
+
+  function stats(trades) {
+    const closed = trades.filter(t => t.status === 'CLOSED');
+    const wins = closed.filter(t => t.R > 0.01);
+    let eq = 0, peak = 0, dd = 0;
+    const curve = [];
+    for (const t of closed) { eq += t.R; peak = Math.max(peak, eq); dd = Math.max(dd, peak - eq); curve.push({ t: t.exitTime, eq }); }
+    const pos = closed.filter(t => t.R > 0).reduce((s, t) => s + t.R, 0);
+    const neg = -closed.filter(t => t.R < 0).reduce((s, t) => s + t.R, 0);
+    return {
+      n: closed.length, open: trades.length - closed.length,
+      wins: wins.length, winRate: closed.length ? wins.length / closed.length * 100 : 0,
+      totalR: eq, avgR: closed.length ? eq / closed.length : 0,
+      pf: neg > 0 ? pos / neg : (pos > 0 ? Infinity : 0), maxDD: dd,
+      longs: closed.filter(t => t.dir === 'LONG').length, shorts: closed.filter(t => t.dir === 'SHORT').length,
+      avgBars: closed.length ? closed.reduce((s, t) => s + t.bars, 0) / closed.length : 0,
+      curve,
+    };
+  }
+
+
+  /* ============== PORTFOLIO SIMULATION (money management, fees) ==============
+     list: [{ sym, trades, lastPrice, lastTime }]  — trades from backtest() per symbol
+  */
+  const PORT_DEFAULTS = { capital: 100, riskPct: 0.75, mode: 'futures', leverage: 3, maxOpen: 6, maxSameDir: 6,
+    takerFee: 0.06, makerFee: 0.02, slipPct: 0.05, fundingPct8h: 0.01, minNotional: 5 };
+
+  function portfolio(list, opt) {
+    const O = Object.assign({}, PORT_DEFAULTS, opt || {});
+    const tk = O.takerFee / 100, mk = O.makerFee / 100, sl = O.slipPct / 100;
+    const all = [];
+    for (const it of list) for (const t of it.trades) all.push({ sym: it.sym, t, last: it });
+    all.sort((a, b) => a.t.entryTime - b.t.entryTime);
+    let cash = O.capital, peak = O.capital, maxDD = 0, maxDDusd = 0, fees = 0, funding = 0;
+    const open = [], done = [], skipped = {}, curve = [{ t: all.length ? all[0].t.entryTime : 0, eq: O.capital }];
+    const skip = (why) => { skipped[why] = (skipped[why] || 0) + 1; };
+
+    function realize(p) {
+      const t = p.t, d = p.dir;
+      let pnl = 0, fee = 0;
+      const legs = [];
+      if (t.partialDone && t.partialPrice) legs.push({ q: p.qty / 2, px: t.partialPrice, rate: mk });
+      const rest = legs.length ? p.qty / 2 : p.qty;
+      let px, rate;
+      if (t.why === 'TP') { px = t.tp1; rate = mk; }                         // limit order
+      else if (t.why === 'SL' || t.why === 'BE') { px = t.exit * (1 - d * sl); rate = tk; } // stop-market, adverse slip
+      else { px = t.exit * (1 - d * sl); rate = tk; }                         // time exit, market
+      legs.push({ q: rest, px, rate });
+      for (const L of legs) { pnl += d * L.q * (L.px - p.entryPx); fee += L.q * L.px * L.rate; }
+      const hours = (t.exitTime - t.entryTime) / 3600;
+      const fund = O.mode === 'futures' ? p.notional * (O.fundingPct8h / 100) * hours / 8 : 0;
+      cash += pnl - fee - fund; fees += fee; funding += fund;
+      const net = pnl - fee - fund - p.entryFee;
+      done.push(Object.assign(p, { exitPx: px, exitTime: t.exitTime, why: t.why, pnl: net, exitFee: fee, fund, balance: cash }));
+      peak = Math.max(peak, cash);
+      const ddUsd = peak - cash; maxDDusd = Math.max(maxDDusd, ddUsd); maxDD = Math.max(maxDD, ddUsd / peak * 100);
+      curve.push({ t: t.exitTime, eq: cash });
+    }
+    function closeUntil(ts) {
+      open.sort((a, b) => a.t.exitTime - b.t.exitTime);
+      while (open.length && open[0].t.status === 'CLOSED' && open[0].t.exitTime <= ts) realize(open.shift());
+    }
+
+    for (const a of all) {
+      const t = a.t;
+      closeUntil(t.entryTime);
+      const d = t.dir === 'LONG' ? 1 : -1;
+      if (O.mode === 'spot' && d < 0) { skip('اسپات: فروش (Short) ممکن نیست'); continue; }
+      if (open.length >= O.maxOpen) { skip('سقف معاملات همزمان'); continue; }
+      if (open.filter(p => p.dir === d).length >= O.maxSameDir) { skip('سقف معاملات هم‌جهت'); continue; }
+      if (cash <= O.minNotional) { skip('موجودی ناکافی'); continue; }
+      const entryPx = t.entry * (1 + d * sl);
+      const stopPx = t.sl * (1 - d * sl);
+      const perUnit = Math.abs(entryPx - stopPx) + entryPx * tk + stopPx * tk;   // loss per unit incl. fees
+      const riskUsd = cash * O.riskPct / 100;
+      let qty = riskUsd / perUnit, notional = qty * entryPx, capped = false;
+      const used = open.reduce((s, p) => s + p.notional, 0);
+      const cap = O.mode === 'spot' ? cash - used : cash * O.leverage - used;
+      if (notional > cap) { qty = Math.max(0, cap) / entryPx; notional = qty * entryPx; capped = true; }
+      if (notional < O.minNotional) { skip('حجم سفارش کمتر از حداقل (سرمایه درگیر)'); continue; }
+      const entryFee = notional * tk;
+      cash -= entryFee; fees += entryFee;
+      open.push({ sym: a.sym, t, dir: d, entryPx, stopPx, qty, notional, entryFee, riskUsd: qty * perUnit, capped, entryTime: t.entryTime });
+    }
+    closeUntil(Infinity);
+    // still open: mark to market
+    let unreal = 0;
+    for (const p of open) {
+      const lp = p.t.status === 'OPEN' ? lastPriceOf(list, p.sym) : p.t.exit;
+      unreal += p.dir * p.qty * (lp - p.entryPx) - p.notional * tk;
+    }
+    const wins = done.filter(p => p.pnl > 0), losses = done.filter(p => p.pnl <= 0);
+    let streak = 0, maxStreak = 0;
+    for (const p of done.slice().sort((a, b) => a.exitTime - b.exitTime)) { if (p.pnl <= 0) { streak++; maxStreak = Math.max(maxStreak, streak); } else streak = 0; }
+    const months = {};
+    let prevEq = O.capital;
+    for (const p of done.slice().sort((a, b) => a.exitTime - b.exitTime)) {
+      const k = new Date(p.exitTime * 1000).toISOString().slice(0, 7);
+      if (!months[k]) months[k] = { start: prevEq, pnl: 0, n: 0 };
+      months[k].pnl += p.pnl; months[k].n++; prevEq += p.pnl;
+    }
+    const grossW = wins.reduce((s, p) => s + p.pnl, 0), grossL = -losses.reduce((s, p) => s + p.pnl, 0);
+    return {
+      opt: O, final: cash, unreal, openPos: open, retPct: (cash - O.capital) / O.capital * 100, fees, funding, maxDD, maxDDusd,
+      taken: done.length, wins: wins.length, winRate: done.length ? wins.length / done.length * 100 : 0,
+      avgWin: wins.length ? grossW / wins.length : 0, avgLoss: losses.length ? -grossL / losses.length : 0,
+      pf: grossL > 0 ? grossW / grossL : Infinity, maxStreak, skipped, curve, trades: done, months,
+    };
+  }
+  function lastPriceOf(list, sym) { const it = list.find(x => x.sym === sym); return it ? it.lastPrice : 0; }
+
+
+  /* =====================================================================
+     TREND STRATEGY v1  (selected by 2-year research, train/test validated)
+     - Daily trend : close > EMA50 and EMA20 > EMA50 (long) / mirror (short)
+     - 4H trigger  : 4H close breaks the high/low of the previous N bars
+     - 15m entry   : within W 15m bars, price pulls back to the breakout level
+                     (± touchAtr×ATR4H) and a 15m candle closes back past EMA20
+                     in the trade direction. Fails if price closes beyond
+                     level ∓ failAtr×ATR4H or the window expires.
+     - Stop        : entry ∓ K×ATR4H, then trailing K×ATR4H on every 4H close
+     - No fixed target (trend following)
+     ===================================================================== */
+  const TREND_DEFAULTS = { trN: 40, trK: 3, trWin: 24, trTouchAtr: 0.25, trFailAtr: 1.5, trPartialR: 0 };
+
+  function prepTrend(ctx) {
+    if (ctx.trendReady) return;
+    const P = Object.assign({}, TREND_DEFAULTS, ctx.P), { D, H, M } = ctx;
+    D.e20 = ema(D.c, 20); D.e50 = ema(D.c, 50);
+    M.e20 = ema(M.c, 20);
+    const N = P.trN;
+    H.dHi = new Array(H.n).fill(NaN); H.dLo = new Array(H.n).fill(NaN);
+    for (let i = N; i < H.n; i++) { let hh = -Infinity, ll = Infinity; for (let x = i - N; x < i; x++) { if (H.h[x] > hh) hh = H.h[x]; if (H.l[x] < ll) ll = H.l[x]; } H.dHi[i] = hh; H.dLo[i] = ll; }
+    H.di = new Array(H.n); let j = -1;
+    for (let i = 0; i < H.n; i++) { const T = H.t[i] + 14400; while (j + 1 < D.n && D.t[j + 1] + 86400 <= T) j++; H.di[i] = j; }
+    ctx.TP = P; ctx.trendReady = true;
+  }
+  function dTrendAt(ctx, j) {
+    const D = ctx.D; if (j < 50) return 0;
+    if (D.c[j] > D.e50[j] && D.e20[j] > D.e50[j]) return 1;
+    if (D.c[j] < D.e50[j] && D.e20[j] < D.e50[j]) return -1;
+    return 0;
+  }
+  function first15At(M, ts) { let lo = 0, hi = M.n - 1, a = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (M.t[m] >= ts) { a = m; hi = m - 1; } else lo = m + 1; } return a; }
+
+  // full simulation up to time `until` (unix sec, candle close time). Returns trades + live state.
+  function backtestTrend(ctx, opts = {}) {
+    prepTrend(ctx);
+    const P = ctx.TP, { D, H, M } = ctx, until = opts.until || Infinity;
+    const trades = [];
+    let pos = null, pend = null;
+    const closeTrade = (ex, t, why) => {
+      const d = pos.dir === 'LONG' ? 1 : -1;
+      const restR = d * (ex - pos.entry) / Math.abs(pos.entry - pos.sl);
+      if (pos.partialDone && why === 'SL') why = 'BE';
+      Object.assign(pos, { exit: ex, exitTime: t, why, R: pos.partialDone ? 0.5 * P.trPartialR + 0.5 * restR : restR, status: 'CLOSED', tp1: ex,
+        bars: Math.round((t - pos.entryTime) / 900) });
+      trades.push(pos); pos = null;
+    };
+    const tryPartial = (hi, lo) => {
+      if (!pos || !(P.trPartialR > 0) || pos.partialDone) return;
+      const L = pos.dir === 'LONG', r = Math.abs(pos.entry - pos.sl), tgt = L ? pos.entry + P.trPartialR * r : pos.entry - P.trPartialR * r;
+      if (L ? hi >= tgt : lo <= tgt) { pos.partialDone = true; pos.partialPrice = tgt; if (L ? pos.stop < pos.entry : pos.stop > pos.entry) pos.stop = pos.entry; }
+    };
+    // process 15m bars [m0, m1) for pending entry / stop hits. returns nothing
+    const run15 = (m0, tEnd) => {
+      for (let m = m0; m >= 0 && m < M.n && M.t[m] < tEnd && M.t[m] + 900 <= until; m++) {
+        if (pos) {
+          const L = pos.dir === 'LONG';
+          if (L ? M.l[m] <= pos.stop : M.h[m] >= pos.stop) { closeTrade(L ? Math.min(pos.stop, M.o[m]) : Math.max(pos.stop, M.o[m]), M.t[m] + 900, pos.trailed ? 'TRAIL' : 'SL'); }
+          else tryPartial(M.h[m], M.l[m]);
+          continue;
+        }
+        if (!pend) continue;
+        if (M.t[m] + 900 > pend.expire) { pend.status = 'EXPIRED'; pend = null; continue; }
+        const L = pend.dir === 'LONG';
+        if (!pend.touched && (L ? M.l[m] <= pend.level + P.trTouchAtr * pend.atr : M.h[m] >= pend.level - P.trTouchAtr * pend.atr)) pend.touched = M.t[m] + 900;
+        if (L ? M.c[m] < pend.level - P.trFailAtr * pend.atr : M.c[m] > pend.level + P.trFailAtr * pend.atr) { pend.status = 'FAILED'; pend = null; continue; }
+        if (pend.touched && (L ? M.c[m] > M.e20[m] && M.c[m] > M.o[m] : M.c[m] < M.e20[m] && M.c[m] < M.o[m])) {
+          const entry = M.c[m], stop = L ? entry - P.trK * pend.atr : entry + P.trK * pend.atr;
+          pos = { dir: pend.dir, entry, sl: stop, stop, entryTime: M.t[m] + 900, level: pend.level, breakTime: pend.time, trailed: false, status: 'OPEN', R: null, total: '-', rr: null, tp1: null, partialDone: false };
+          pend = null;
+        }
+      }
+    };
+    let lastI = -1;
+    for (let i = Math.max(P.trN, 60); i < H.n; i++) {
+      const barEnd = H.t[i] + 14400;
+      if (barEnd > until) break;
+      lastI = i;
+      // 15m bars inside this 4H bar: pending entries + stop hits after entry
+      if ((pend || pos) && M.n) {
+        const a = first15At(M, H.t[i]);
+        const posBefore = pos;
+        if (a >= 0) run15(a, barEnd);
+        if (pos && pos === posBefore) {
+          // position existed before this bar: stop already checked on 15m inside run15
+        }
+      } else if (pos) {
+        const L = pos.dir === 'LONG';
+        if (L ? H.l[i] <= pos.stop : H.h[i] >= pos.stop) closeTrade(L ? Math.min(pos.stop, H.o[i]) : Math.max(pos.stop, H.o[i]), barEnd, pos.trailed ? 'TRAIL' : 'SL');
+        else tryPartial(H.h[i], H.l[i]);
+      }
+      // trailing on 4H close
+      if (pos) {
+        const L = pos.dir === 'LONG', ns = L ? H.c[i] - P.trK * H.atr[i] : H.c[i] + P.trK * H.atr[i];
+        if (L ? ns > pos.stop : ns < pos.stop) { pos.stop = ns; pos.trailed = true; }
+        continue;
+      }
+      if (pend) continue;
+      // new 4H breakout signal
+      const j = H.di[i], tr = dTrendAt(ctx, j);
+      if (tr > 0 && H.c[i] > H.dHi[i]) pend = { dir: 'LONG', level: H.dHi[i], atr: H.atr[i], time: barEnd, expire: barEnd + P.trWin * 900, touched: 0, status: 'PENDING' };
+      else if (tr < 0 && H.c[i] < H.dLo[i]) pend = { dir: 'SHORT', level: H.dLo[i], atr: H.atr[i], time: barEnd, expire: barEnd + P.trWin * 900, touched: 0, status: 'PENDING' };
+      if (pend && (!M.n || M.t[0] > barEnd)) pend = null;     // no 15m data for this period
+    }
+    // tail: 15m bars after the last closed 4H bar (current forming 4H bar)
+    if (lastI >= 0 && M.n && (pend || pos)) { const a = first15At(M, H.t[lastI] + 14400); if (a >= 0) run15(a, Infinity); }
+    if (pos) trades.push(pos);
+    return { trades, stats: stats(trades), pending: pend, lastI, locks: [] };
+  }
+
+  // live state for the report at time `until` (default: last 15m close)
+  function evaluateTrend(ctx, until, btPre) {
+    prepTrend(ctx);
+    const { D, H, M } = ctx, P = ctx.TP;
+    const T = until || (M.n ? M.t[M.n - 1] + 900 : H.t[H.n - 1] + 14400);
+    const bt = btPre && !until ? btPre : backtestTrend(ctx, { until: T });
+    const i = bt.lastI;
+    if (i < 0) return { error: 'دیتای ۴ساعته کافی نیست' };
+    const j = H.di[i], trd = dTrendAt(ctx, j);
+    // level for the NEXT 4H bar = high/low of last N closed bars (incl. bar i)
+    let hh = -Infinity, ll = Infinity; for (let x = i - P.trN + 1; x <= i; x++) { hh = Math.max(hh, H.h[x]); ll = Math.min(ll, H.l[x]); }
+    const mIdx = M.n ? Math.max(0, first15At(M, T) < 0 ? M.n - 1 : first15At(M, T) - 1) : -1;
+    const price = mIdx >= 0 ? M.c[mIdx] : H.c[i];
+    const last = bt.trades[bt.trades.length - 1];
+    const open = last && last.status === 'OPEN' ? last : null;
+    const fresh = open && T - open.entryTime <= 900 ? open : null;           // entry on the very last 15m close
+    return { time: T, price, i, j, m: mIdx, trend: trd, daily: { c: D.c[j], e20: D.e20[j], e50: D.e50[j] },
+      h4: { close: H.c[i], atr: H.atr[i], hi: hh, lo: ll, barTime: H.t[i] + 14400 },
+      pending: bt.pending, open, signal: fresh, bt };
+  }
+
+
+  /* =====================================================================
+     WEEKLY LOW-VOLATILITY (book §3.3, market-neutral)
+     Every week (decision at the close of the daily candle of weekday `day`, UTC):
+       long the k lowest-volatility coins, short the k highest (V-day realized vol),
+       50% of gross capital each side, equal weights. Hold 7 days.
+     ===================================================================== */
+  const LV_DEFAULTS = { lvV: 30, lvK: 3, lvDay: 0, lvGross: 1 };   // lvDay: 0 = Sunday candle (closes Mon 00:00 UTC)
+  function lowVolAligned(symbols) {
+    const syms = Object.keys(symbols).filter(s => symbols[s]['1day'] && symbols[s]['1day'].length > 40);
+    const tset = new Set(); for (const s of syms) for (const r of symbols[s]['1day']) tset.add(r[0]);
+    const T = [...tset].sort((a, b) => a - b);
+    const C = {}; for (const s of syms) { const m = new Map(symbols[s]['1day'].map(r => [r[0], r[4]])); C[s] = T.map(t => m.has(t) ? m.get(t) : NaN); }
+    return { syms, T, C };
+  }
+  function lowVolPick(A, i, P) {
+    const ret = (s, j) => A.C[s][j] / A.C[s][j - 1] - 1;
+    const vol = [];
+    for (const s of A.syms) { let a = 0, n = 0; for (let j = i - P.lvV + 1; j <= i; j++) { const r = ret(s, j); if (isFinite(r)) { a += r * r; n++; } } if (n >= P.lvV * 0.8) vol.push({ s, v: Math.sqrt(a / n) * Math.sqrt(365) * 100 }); }
+    vol.sort((x, y) => x.v - y.v);
+    if (vol.length < 2 * P.lvK) return null;
+    const w = {}; vol.slice(0, P.lvK).forEach(x => w[x.s] = 0.5 * P.lvGross / P.lvK); vol.slice(-P.lvK).forEach(x => w[x.s] = -0.5 * P.lvGross / P.lvK);
+    return { w, vol };
+  }
+  function lowVolBacktest(symbols, opts = {}) {
+    const P = Object.assign({}, LV_DEFAULTS, opts), fee = (opts.takerFee ?? 0.06) / 100, fund = (opts.fundingPct8h ?? 0.01) / 100;
+    const A = lowVolAligned(symbols), weeks = [];
+    let eq = 1, pk = 1, dd = 0, prev = {};
+    for (let i = P.lvV + 1; i < A.T.length; i++) {
+      if (new Date(A.T[i] * 1000).getUTCDay() !== P.lvDay) continue;
+      const pick = lowVolPick(A, i, P); if (!pick) continue;
+      const end = Math.min(i + 7, A.T.length - 1), done = i + 7 <= A.T.length - 1;
+      let r = 0, turn = 0, gross = 0; const legs = [];
+      for (const s of A.syms) {
+        const wi = pick.w[s] || 0; turn += Math.abs(wi - (prev[s] || 0)); gross += Math.abs(wi);
+        if (wi) { const rr = A.C[s][end] / A.C[s][i] - 1; r += wi * rr; legs.push({ s, w: wi, entry: A.C[s][i], exit: A.C[s][end], ret: rr * 100 * Math.sign(wi) }); }
+      }
+      const cost = turn * fee + gross * fund * 3 * (end - i);
+      r -= cost; prev = pick.w;
+      if (done) { eq *= 1 + r; pk = Math.max(pk, eq); dd = Math.max(dd, (pk - eq) / pk * 100); }
+      weeks.push({ t: A.T[i] + 86400, tEnd: A.T[end] + 86400, ret: r * 100, cost: cost * 100, legs, vol: pick.vol, done, eq });
+    }
+    const dn = weeks.filter(w => w.done);
+    return { weeks, eq, ret: (eq - 1) * 100, maxDD: dd, win: dn.length ? dn.filter(w => w.ret > 0).length / dn.length * 100 : 0, n: dn.length,
+      costs: dn.reduce((a, w) => a + w.cost, 0), P, A };
+  }
+  function lowVolNow(symbols, opts = {}) {
+    const P = Object.assign({}, LV_DEFAULTS, opts), A = lowVolAligned(symbols);
+    const i = A.T.length - 1, pick = lowVolPick(A, i, P);
+    // next decision: next candle close whose candle weekday == lvDay
+    const lastClose = A.T[i] + 86400; let next = lastClose;
+    while (new Date((next - 86400) * 1000).getUTCDay() !== P.lvDay || next <= Date.now() / 1000) next += 86400;
+    return { pick, asOf: lastClose, next, P };
+  }
+
+  function evaluateLatest(ctx) { return evaluateAt(ctx, ctx.M.n - 1); }
+
+  return { DEFAULTS, TREND_DEFAULTS, LV_DEFAULTS, lowVolBacktest, lowVolNow, PORT_DEFAULTS, portfolio, backtestTrend, evaluateTrend, TF_SEC, prepare, evaluateAt, evaluateLatest, backtest, analyzeDaily, lastClosed, ema };
+})();
+if (typeof module !== 'undefined') module.exports = Engine;
+
+</script>
+<script>
+/* ===================== APP UI v2 — multi-symbol analysis report ===================== */
+(() => {
+const $ = s => document.querySelector(s);
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const S = {
+  data: null, lastGen: null, syms: [], sel: LS.get('scanner.sel', null), O: {}, replayM: null,
+  auto: false, autoTimer: null, nextCheck: 0, focusTrade: null,
+  params: Object.assign({}, Engine.DEFAULTS, LS.get('scanner.params', {})),
+  port: Object.assign({}, Engine.PORT_DEFAULTS, LS.get('scanner.port.v3', {})),
+};
+
+/* ---------------- format ---------------- */
+const fmtP = p => p == null || isNaN(p) ? '-' : (Math.abs(p) >= 1000 ? p.toFixed(2) : Math.abs(p) >= 10 ? p.toFixed(3) : Math.abs(p) >= 1 ? p.toFixed(4) : p.toPrecision(5));
+const fmtN = (x, d = 2) => x == null || isNaN(x) ? '-' : (x === Infinity ? '∞' : Number(x).toFixed(d));
+const fmtPct = (x, d = 1) => (x > 0 ? '+' : '') + fmtN(x, d) + '%';
+const TF_FMT = new Intl.DateTimeFormat('fa-IR-u-nu-latn', { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const fmtT = ts => ts ? TF_FMT.format(new Date(ts * 1000)) : '-';
+const num = x => `<span class="num">${x}</span>`;
+const rng = z => num(fmtP(z.lo) + ' – ' + fmtP(z.hi));
+const dirBadge = d => d === 'LONG' || d === 'BULL' ? `<span class="badge b-long">${d === 'LONG' ? 'خرید LONG' : 'صعودی'}</span>`
+  : d === 'SHORT' || d === 'BEAR' ? `<span class="badge b-short">${d === 'SHORT' ? 'فروش SHORT' : 'نزولی'}</span>` : `<span class="badge b-range">رنج</span>`;
+const short = s => s.replace('-USDT', '');
+
+/* ---------------- data loading ---------------- */
+function loadScript() {
+  const old = document.getElementById('dataScript'); if (old) old.remove();
+  const sc = document.createElement('script');
+  sc.id = 'dataScript'; sc.src = 'ScannerData.js?t=' + Date.now();
+  sc.onload = () => { if (window.SCANNER_DATA) onData(window.SCANNER_DATA, 'ScannerData.js'); };
+  sc.onerror = () => { if (!S.data) setPill('bad', 'ScannerData.js کنار این فایل پیدا نشد'); };
+  document.head.appendChild(sc);
+}
+$('#fileIn').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try { let t = rd.result.trim().replace(/^window\.SCANNER_DATA\s*=\s*/, '').replace(/;\s*$/, '');
+      S.lastGen = null; onData(JSON.parse(t), f.name);
+    } catch (err) { alert('فایل قابل خواندن نیست: ' + err.message); }
+  };
+  rd.readAsText(f);
+});
+function setPill(cls, txt) { const p = $('#dataPill'); p.className = 'pill ' + cls; p.textContent = txt; }
+
+function onData(data, srcName) {
+  if (S.data && data.generatedUtc === S.lastGen) { refreshPill(); return; }
+  S.data = data; S.lastGen = data.generatedUtc;
+  S.syms = Object.keys(data.symbols || {});
+  if (!S.sel || !S.syms.includes(S.sel)) S.sel = S.syms[0];
+  const sp = $('#srcPill'); sp.style.display = '';
+  const demo = data.source === 'SYNTHETIC-TEST';
+  sp.textContent = (demo ? '⚠ دیتای آزمایشی' : 'منبع: ' + (data.source || '?')) + ' · ' + S.syms.length + ' ارز · ' + srcName;
+  sp.className = 'pill ' + (demo ? 'warn' : '');
+  buildAll();
+}
+
+function refreshPill() {
+  const o = S.O[S.sel]; if (!o || !o.ctx) return;
+  const M = o.ctx.M, last = M.t[M.n - 1] + 900, age = (Date.now() / 1000 - last) / 60;
+  setPill(age < 35 ? 'ok' : age < 180 ? 'warn' : 'bad',
+    `آخرین کندل: ${fmtT(last)} (${age < 120 ? Math.round(age) + ' دقیقه قبل' : (age / 60).toFixed(1) + ' ساعت قبل'}) · خروجی اکسل: ${fmtT(S.data.generatedUtc)}`);
+}
+
+function buildAll() {
+  S.O = {};
+  for (const sym of S.syms) {
+    const o = { sym };
+    try {
+      o.ctx = Engine.prepare(S.data.symbols[sym], S.params);
+      o.rep = Engine.evaluateLatest(o.ctx);                 // levels/channel context
+      if (isTrend()) { o.bt = Engine.backtestTrend(o.ctx); o.ev = Engine.evaluateTrend(o.ctx, null, o.bt); o.status = trendStatus(o); }
+      else { o.bt = Engine.backtest(o.ctx); o.status = symStatus(o); }
+    } catch (e) { o.err = e.message; o.status = { rank: 9, cls: 'st-wait', txt: 'خطا: ' + e.message }; }
+    S.O[sym] = o;
+  }
+  S.replayM = null;
+  refreshPill(); renderWatchlist(); renderReport(); renderBt(); drawChart(); renderLV();
+  checkNewSignals();
+}
+
+/* ---------------- analysis helpers ---------------- */
+function keyZones(d, price) {
+  const a = d.atr;
+  const all = d.zones.filter(z => Math.abs(z.mid - price) <= 8 * a);
+  const inside = all.filter(z => z.lo <= price && z.hi >= price);
+  const sup = all.filter(z => z.hi < price).sort((x, y) => y.hi - x.hi).slice(0, 3);
+  const res = all.filter(z => z.lo > price).sort((x, y) => x.lo - y.lo).slice(0, 3);
+  const mark = (arr, kind) => arr.map((z, i) => Object.assign({}, z, { kind, important: z.touches >= 3 || i === 0 }));
+  return { inside: mark(inside, 'IN'), sup: mark(sup, 'S'), res: mark(res, 'R'), list: [...mark(res, 'R').reverse(), ...mark(inside, 'IN'), ...mark(sup, 'S')] };
+}
+function activeLock(o, dir, price, t) {
+  return (o.bt.locks || []).find(l => l.dir === dir && t >= l.from && t < l.until && price >= l.lo && price <= l.hi);
+}
+function scenPlan(o, dir, rep) {
+  const { ctx } = o, P = ctx.P, d = rep.daily, h = rep.h4, price = rep.price, a4 = h.atr;
+  const side = dir === 'LONG' ? h.long : h.short;
+  const kz = keyZones(d, price);
+  let zone = side.zone || (dir === 'LONG' ? (kz.inside[0] || kz.sup[0]) : (kz.inside[0] || kz.res[0])) || null;
+  let viaChan = false;
+  if (!zone) { const e = dir === 'LONG' ? h.chanLine.lower : h.chanLine.upper; zone = { lo: e - 0.25 * a4, hi: e + 0.25 * a4, touches: 0 }; viaChan = true; }
+  const L = dir === 'LONG';
+  const entry = L ? Math.min(price, zone.hi) : Math.max(price, zone.lo);
+  const sl = L ? zone.lo - P.slAtr4h * a4 : zone.hi + P.slAtr4h * a4;
+  const risk = Math.abs(entry - sl);
+  const tz = d.zones.filter(z => L ? z.lo - entry >= 0.5 * risk : entry - z.hi >= 0.5 * risk).sort((x, y) => L ? x.lo - y.lo : y.hi - x.hi)[0];
+  let tp = tz ? (L ? tz.lo : tz.hi) : entry + (L ? 1 : -1) * P.minRR * risk, tpFromLevel = !!tz;
+  if (Math.abs(tp - entry) / risk > P.maxRR) { tp = entry + (L ? 1 : -1) * P.maxRR * risk; tpFromLevel = false; }
+  const rr = Math.abs(tp - entry) / risk, riskPct = risk / entry * 100;
+  const inZone = price >= zone.lo && price <= zone.hi;
+  const distPct = inZone ? 0 : L ? (price - zone.hi) / price * 100 : (zone.lo - price) / price * 100;
+  const tr = d.trend.dir;
+  const aligned = (L && tr === 'BULL') || (!L && tr === 'BEAR');
+  const active = side.ok && (!P.requireConfirm || !!side.confirm);
+  return { dir, zone, viaChan, entry, sl, tp, rr, riskPct, tpFromLevel, distPct, inZone, aligned, allowed: rep.dirs.includes(dir), active, side,
+    lock: activeLock(o, dir, entry, rep.time) };
+}
+function symStatus(o) {
+  const rep = o.rep;
+  if (rep.error) return { rank: 8, cls: 'st-wait', txt: rep.error };
+  const lt = o.bt.trades[o.bt.trades.length - 1];
+  const sig = rep.signal && !activeLock(o, rep.signal.dir, rep.signal.entry, rep.time) ? rep.signal : null;
+  if (sig) return { rank: 0, cls: 'st-sig', txt: `🎯 سیگنال ${sig.dir === 'LONG' ? 'خرید' : 'فروش'} (امتیاز ${sig.total})` };
+  if (lt && lt.status === 'OPEN') return { rank: 1, cls: 'st-open', txt: `📌 معامله‌ی باز ${lt.dir === 'LONG' ? 'خرید' : 'فروش'}` };
+  const plans = rep.dirs.map(dd => scenPlan(o, dd, rep));
+  const act = plans.find(p => p.active && !p.lock);
+  if (act) return { rank: 2, cls: 'st-zone', txt: `⏳ در ناحیه‌ی ${act.dir === 'LONG' ? 'خرید' : 'فروش'} — منتظر ماشه ۱۵م`, dist: 0 };
+  const best = plans.filter(p => !p.lock).sort((a, b) => a.distPct - b.distPct)[0];
+  if (!best) { const lk = plans.find(p => p.lock); return { rank: 5, cls: 'st-wait', txt: lk ? `🔒 ناحیه‌ی ${lk.dir === 'LONG' ? 'خرید' : 'فروش'} قفل تا ${fmtT(lk.lock.until).split(', ')[1] || ''} ${fmtT(lk.lock.until).split(', ')[0].slice(5)}` : 'منتظر' }; }
+  const near = best.distPct <= 2 * S.params.h4ZoneAtr * (rep.h4.atr / rep.price * 100);
+  return { rank: near ? 3 : 4, cls: near ? 'st-near' : 'st-wait', dist: best.distPct,
+    txt: `${near ? 'نزدیک' : 'تا'} ناحیه‌ی ${best.dir === 'LONG' ? 'خرید' : 'فروش'}: ${fmtN(best.distPct)}%` };
+}
+const chg24 = M => { const i = M.n - 1, j = Math.max(0, i - 96); return (M.c[i] - M.c[j]) / M.c[j] * 100; };
+
+/* ---------------- auto mode + alerts ---------------- */
+$('#btnReload').onclick = () => { S.lastGen = null; loadScript(); };
+$('#btnAuto').onclick = () => {
+  S.auto = !S.auto;
+  if (S.auto) {
+    try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (e) {}
+    S.nextCheck = Date.now() + 60000;
+    S.autoTimer = setInterval(() => {
+      const left = Math.max(0, Math.round((S.nextCheck - Date.now()) / 1000));
+      $('#btnAuto').textContent = `⏱ خودکار: روشن (${left}s)`;
+      if (left <= 0) { S.nextCheck = Date.now() + 60000; loadScript(); }
+    }, 1000);
+    $('#btnAuto').classList.add('on');
+  } else {
+    clearInterval(S.autoTimer); $('#btnAuto').classList.remove('on'); $('#btnAuto').textContent = '⏱ خودکار: خاموش';
+  }
+  LS.set('scanner.auto', S.auto);
+};
+function beep() {
+  try { const ac = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.25].forEach(d => { const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ac.destination); g.gain.value = 0.15; o.start(ac.currentTime + d); o.stop(ac.currentTime + d + 0.15); });
+  } catch (e) {}
+}
+function checkNewSignals() {
+  const seen = LS.get('scanner.alerts', {});
+  let fired = false;
+  for (const sym of S.syms) {
+    const o = S.O[sym]; if (!o.bt) continue;
+    const t = o.bt.trades[o.bt.trades.length - 1];
+    if (!t || t.status !== 'OPEN') continue;
+    const key = t.entryTime + '|' + t.dir;
+    if (seen[sym] === key) continue;
+    seen[sym] = key;
+    if ((Date.now() / 1000 - t.entryTime) / 60 > 60) continue;
+    fired = true;
+    try { if (window.Notification && Notification.permission === 'granted')
+      new Notification(`${sym} ${t.dir}`, { body: `ورود ${fmtP(t.entry)} | SL ${fmtP(t.sl)} | TP ${fmtP(t.tp1)}` }); } catch (e) {}
+  }
+  LS.set('scanner.alerts', seen);
+  if (fired) beep();
+}
+
+/* ---------------- tabs ---------------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+function showTab(id) {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('act', x.dataset.tab === id));
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('act', x.id === 'tab-' + id));
+  if (id === 'chart') drawChart();
+  if (id === 'bt') { drawEquity(); if (S.portRes) runPort(); }
+  if (id === 'ana') redrawReportCharts();
+  if (id === 'lv') renderLV();
+}
+function selectSym(sym) { S.sel = sym; LS.set('scanner.sel', sym); S.replayM = null; S.focusTrade = null; refreshPill(); renderWatchlist(); renderReport(); drawChart(); }
+
+/* ---------------- WATCHLIST ---------------- */
+function renderWatchlist() {
+  const items = S.syms.map(s => S.O[s]).sort((a, b) => (a.status.rank - b.status.rank) || ((a.status.dist ?? 99) - (b.status.dist ?? 99)));
+  $('#watchlist').innerHTML = `<div class="mute" style="font-size:12px;padding:0 6px 6px">${S.syms.length} ارز · مرتب‌شده بر اساس نزدیکی به موقعیت ورود</div>` +
+    items.map(o => {
+      if (!o.ctx) return `<div class="wl-item" data-s="${o.sym}"><div class="wl-sym">${short(o.sym)}</div><div class="wl-st red">${o.err}</div></div>`;
+      const M = o.ctx.M, ch = chg24(M), tr = o.rep.daily && o.rep.daily.trend ? o.rep.daily.trend.dir : null;
+      return `<div class="wl-item ${o.sym === S.sel ? 'act' : ''}" data-s="${o.sym}">
+        <div class="wl-top"><span class="wl-sym">${short(o.sym)}</span>${tr ? dirBadge(tr) : ''}
+        <span class="num">${fmtP(M.c[M.n - 1])}</span><span class="num ${ch >= 0 ? 'green' : 'red'}" style="font-size:12px">${fmtPct(ch)}</span></div>
+        <div class="wl-st ${o.status.cls}">${o.status.txt}</div></div>`;
+    }).join('');
+  document.querySelectorAll('.wl-item').forEach(el => el.onclick = () => selectSym(el.dataset.s));
+}
+
+/* ---------------- REPORT ---------------- */
+let rc = {}; // report charts
+function renderReport() {
+  if (isTrend()) return renderTrendReport();
+  const o = S.O[S.sel];
+  if (!o) return;
+  if (!o.ctx) { $('#report').innerHTML = `<div class="card red">${o.err}</div>`; return; }
+  const ctx = o.ctx, P = ctx.P, M = ctx.M;
+  const m = S.replayM == null ? M.n - 1 : S.replayM;
+  const rep = S.replayM == null ? o.rep : Engine.evaluateAt(ctx, m);
+  o.view = rep;
+  const replayBox = `<details class="card" style="margin-top:12px" ${S.replayM != null ? 'open' : ''}><summary>🕘 تست روی گذشته (تحلیل را در هر لحظه‌ی دلخواه ببینید)</summary>
+      <div class="toolbar" style="margin:8px 0 0"><span>زمان: <b class="num" id="rpT">${fmtT(rep.time)}</b></span><button id="rpLive" class="primary">برگشت به زنده</button></div>
+      <input id="replay" type="range" min="${Math.min(M.n - 1, 200)}" max="${M.n - 1}" value="${m}"></details>`;
+  if (rep.error) { $('#report').innerHTML = `<div class="card amber">${rep.error}</div>` + replayBox; bindReplay(); return; }
+
+  const d = rep.daily, h = rep.h4, price = rep.price, T = d.trend;
+  const kz = keyZones(d, price);
+  const plans = { LONG: scenPlan(o, 'LONG', rep), SHORT: scenPlan(o, 'SHORT', rep) };
+  const st = S.replayM == null ? o.status : symStatus(Object.assign({}, o, { rep }));
+  const ch = chg24(M);
+
+  // ---- narrative
+  const trLabel = T.dir === 'BULL' ? '<b class="green">صعودی</b>' : T.dir === 'BEAR' ? '<b class="red">نزولی</b>' : '<b>رنج / بدون روند مشخص</b>';
+  const why = [];
+  why.push(d.close > T.ema[0] ? `قیمت بالای EMA${P.dEmaFast}` : `قیمت زیر EMA${P.dEmaFast}`);
+  why.push(T.ema[0] > T.ema[1] ? `EMA${P.dEmaFast} بالای EMA${P.dEmaSlow}` : `EMA${P.dEmaFast} زیر EMA${P.dEmaSlow}`);
+  why.push(T.slope > P.dSlopeMin ? 'شیب میانگین متحرک مثبت' : T.slope < -P.dSlopeMin ? 'شیب میانگین متحرک منفی' : 'میانگین متحرک تقریباً افقی');
+  why.push(T.hh && T.hl ? 'سقف‌ها و کف‌های بالاتر (HH/HL)' : T.hh === false && T.hl === false ? 'سقف‌ها و کف‌های پایین‌تر (LH/LL)' : 'ساختار سقف و کف مختلط');
+  const cs = d.chan.slopePctDay, chDir = cs > 0.15 ? 'صعودی' : cs < -0.15 ? 'نزولی' : 'تقریباً افقی';
+  const pos = h.chanPos, posTxt = pos < 0 ? 'زیر کف کانال (خروج از کانال به پایین)' : pos > 1 ? 'بالای سقف کانال (خروج از کانال به بالا)' : pos < 0.25 ? 'نزدیک کف کانال' : pos > 0.75 ? 'نزدیک سقف کانال' : 'میانه‌ی کانال';
+  const zTxt = z => `${rng(z)} <span class="mute">(${z.touches} برخورد، ${fmtPct((z.kind === 'S' ? z.hi - price : z.lo - price) / price * 100)})</span>`;
+  const v = h.vol;
+  const volTxt = `حجم دلاری ۴ساعته ${v.trend > 1.2 ? '<b class="green">رو به افزایش</b>' : v.trend < 0.8 ? '<b class="amber">ضعیف</b>' : 'معمولی'} است (${num(fmtN(v.trend))}× میانگین)؛ در ۲۰ کندل اخیر ${v.balance > 1 ? 'حجم کندل‌های سبز بیشتر بوده (فشار خرید)' : 'حجم کندل‌های قرمز بیشتر بوده (فشار فروش)'} و OBV ${v.obvSlope >= 0 ? 'صعودی' : 'نزولی'} است.`;
+  const mainDir = T.dir === 'BULL' ? 'LONG' : T.dir === 'BEAR' ? 'SHORT' : (plans.LONG.distPct <= plans.SHORT.distPct ? 'LONG' : 'SHORT');
+  const mp = plans[mainDir];
+  const concl = rep.signal && !activeLock(o, rep.signal.dir, rep.signal.entry, rep.time)
+    ? `<b class="green">همین الان سیگنال ورود ${rep.signal.dir === 'LONG' ? 'خرید' : 'فروش'} صادر شده است</b> (جزئیات در بخش ۱۵ دقیقه).`
+    : mp.lock && mp.allowed ? `سناریوی اصلی ${mainDir === 'LONG' ? 'خرید از حمایت' : 'فروش از مقاومت'} ${rng(mp.zone)} است، ولی این ناحیه به‌خاطر حد ضرر اخیر <b class="amber">تا ${fmtT(mp.lock.until)} قفل است</b>؛ تا آن زمان در این ناحیه وارد نمی‌شویم.`
+    : mp.active ? `قیمت در ناحیه‌ی ${mainDir === 'LONG' ? 'خرید' : 'فروش'} قرار دارد؛ <b class="amber">در تایم ۱۵ دقیقه منتظر ماشه‌ی ورود هستیم.</b>`
+      : `فعلاً موقعیت ورود نداریم. ${T.dir === 'RANGE' ? 'بازار رنج است؛ ' : ''}سناریوی اصلی ${mainDir === 'LONG' ? 'خرید از حمایت' : 'فروش از مقاومت'} ${rng(mp.zone)} است که ${num(fmtN(Math.abs(mp.distPct)))}% با قیمت فعلی فاصله دارد.`;
+
+  let html = `
+  <div class="card"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <h2>${short(o.sym)} <span class="mute" style="font-size:13px">/USDT</span></h2>
+    <span class="big num">${fmtP(price)}</span><span class="num ${ch >= 0 ? 'green' : 'red'}">${fmtPct(ch)} (۲۴ساعت)</span>
+    ${dirBadge(T.dir)}<span class="wl-st ${st.cls}" style="font-size:14px">${st.txt}</span>
+    <div class="spacer"></div><span class="mute" style="font-size:12px">${S.replayM == null ? 'زنده' : '🕘 تست گذشته'} · ${fmtT(rep.time)}</span></div></div>
+
+  <div class="card" style="margin-top:12px"><h3>📋 تحلیل وضعیت</h3>
+    <p><b>روند روزانه:</b> ${trLabel} — ${why.join('، ')}.</p>
+    <p><b>کانال روزانه:</b> کانال ${P.chanLen} روز اخیر ${chDir} است (شیب ${num(fmtPct(cs, 2))} در روز). قیمت در ${num(fmtN(pos * 100, 0) + '%')} کانال، یعنی <b>${posTxt}</b> است؛ سقف کانال حدود ${num(fmtP(h.chanLine.upper))} و کف آن حدود ${num(fmtP(h.chanLine.lower))}.</p>
+    <p><b>مقاومت‌های مهم:</b> ${kz.res.length ? kz.res.map(zTxt).join('، ') : 'در محدوده‌ی نزدیک مقاومتی ثبت نشده'}.</p>
+    ${kz.inside.length ? `<p><b class="amber">قیمت داخل ناحیه‌ی</b> ${kz.inside.map(z => rng(z) + ` <span class="mute">(${z.touches} برخورد)</span>`).join('، ')} <b class="amber">است.</b></p>` : ''}
+    <p><b>حمایت‌های مهم:</b> ${kz.sup.length ? kz.sup.map(zTxt).join('، ') : 'در محدوده‌ی نزدیک حمایتی ثبت نشده'}.</p>
+    <p><b>حجم:</b> ${volTxt}</p>
+    <p style="margin:0;padding-top:6px;border-top:1px dashed var(--line)"><b>جمع‌بندی:</b> ${concl}</p>
+  </div>
+
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>📈 روزانه — سطوح مهم و کانال</h3><div class="chartbox"><canvas id="cD"></canvas><div class="cinfo" id="iD"></div></div></div>
+    <div class="card"><h3>📈 ۴ ساعته — جایگاه قیمت در سطوح روزانه</h3><div class="chartbox"><canvas id="cH"></canvas><div class="cinfo" id="iH"></div></div></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:12px">${['LONG', 'SHORT'].map(dd => scenCard(o, plans[dd], dd === mainDir)).join('')}</div>
+
+  ${m15Card(o, rep, plans)}
+
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>📏 جدول سطوح</h3><table><tr><th>نوع</th><th>محدوده</th><th>برخورد</th><th>فاصله</th></tr>
+      ${kz.list.map(z => `<tr><td>${z.kind === 'R' ? '<span class="red">مقاومت</span>' : z.kind === 'S' ? '<span class="green">حمایت</span>' : '<span class="amber">قیمت داخل ناحیه</span>'}${z.important ? ' ⭐' : ''}</td>
+        <td>${rng(z)}</td><td>${z.touches}</td><td class="num">${z.kind === 'IN' ? '0' : fmtPct((z.kind === 'S' ? z.hi - price : z.lo - price) / price * 100)}</td></tr>`).join('')}</table>
+      <div class="mute" style="font-size:12px;margin-top:6px">⭐ = ناحیه‌ی مهم (۳ برخورد یا بیشتر، یا نزدیک‌ترین ناحیه)</div></div>
+    <div class="card"><h3>🧾 سیگنال‌های اخیر این ارز (بک‌تست)</h3>${tradesTable(o.bt.trades.slice(-8).reverse().map(t => ({ t, sym: o.sym })), true)}</div>
+  </div>` + replayBox;
+
+  $('#report').innerHTML = html;
+  bindTradeRows($('#report'));
+  bindReplay();
+  // charts
+  rc = {
+    D: new Chart($('#cD'), $('#iD')), H: new Chart($('#cH'), $('#iH')),
+    M: document.getElementById('cM') ? new Chart($('#cM'), $('#iM')) : null,
+  };
+  redrawReportCharts();
+}
+
+function bindReplay() {
+  const r = $('#replay'); if (!r) return;
+  r.oninput = e => { const o = S.O[S.sel], v = +e.target.value; $('#rpT').textContent = fmtT(o.ctx.M.t[v] + 900); };
+  r.onchange = e => { const o = S.O[S.sel], v = +e.target.value; S.replayM = v >= o.ctx.M.n - 1 ? null : v; renderReport(); };
+  const b = $('#rpLive'); if (b) b.onclick = () => { S.replayM = null; renderReport(); };
+}
+
+function scenCard(o, p, isMain) {
+  const P = o.ctx.P, L = p.dir === 'LONG', a = p.zone;
+  const title = p.aligned ? 'سناریوی اصلی — هم‌جهت روند' : o.view.daily.trend.dir === 'RANGE' ? 'سناریوی بازار رنج' : 'سناریوی خلاف روند';
+  let status;
+  if (!p.allowed) status = `<span class="mute">⛔ غیرفعال: خلاف روند روزانه (برای فعال‌سازی، «اجازه‌ی معامله خلاف روند» را در تنظیمات روشن کنید)</span>`;
+  else if (p.lock) status = `<span class="amber">🔒 این ناحیه به‌خاطر حد ضرر اخیر تا ${fmtT(p.lock.until)} قفل است</span>`;
+  else if (p.active) status = `<b class="green">✅ فعال — قیمت در ناحیه است؛ منتظر ماشه‌ی ۱۵ دقیقه</b>`;
+  else status = `<span>⏳ ${p.inZone ? 'قیمت داخل ناحیه است ولی شرط ۴ساعته هنوز کامل نیست' : `قیمت باید ${num(fmtN(Math.abs(p.distPct)))}% ${L ? 'پایین' : 'بالا'} بیاید`}</span>`;
+  const zoneDesc = p.viaChan ? `${L ? 'کف' : 'سقف'} کانال روزانه (حدود ${num(fmtP((a.lo + a.hi) / 2))})` : `ناحیه‌ی ${L ? 'حمایت' : 'مقاومت'} ${rng(a)} (${a.touches} برخورد)`;
+  const conf = L ? 'پین‌بار یا اینگالفینگ صعودی، یا برگشت بالای EMA20' : 'پین‌بار یا اینگالفینگ نزولی، یا شکست EMA20 به پایین';
+  const body = `اگر قیمت ${p.inZone ? 'در' : 'به'} ${zoneDesc} ${p.inZone ? 'بماند' : 'برسد'}${P.requireConfirm ? ` و در ۴ ساعته کندل تأیید (${conf}) ببینیم` : ` (کندل تأیید ۴ساعته: ${conf} — امتیاز اضافه)`}،
+    در تایم ۱۵ دقیقه منتظر می‌مانیم تا یک کندل ${L ? 'بالای سقف' : 'زیر کف'} ${P.m15BreakBars} کندل قبلی و ${L ? 'بالای' : 'زیر'} EMA${P.m15Ema} بسته شود و حجم دلاری آن حداقل ${P.rvolMin} برابر میانگین باشد.`;
+  const warns = [];
+  if (p.riskPct > P.maxRiskPct) warns.push(`⚠ حد ضرر پشت این ناحیه ${fmtN(p.riskPct)}% دور است (حداکثر مجاز ${P.maxRiskPct}%). ناحیه پهن است و ورود فقط وقتی معتبر می‌شود که قیمت به لبه‌ی ${L ? 'پایینی' : 'بالایی'} آن نزدیک شود.`);
+  if (p.rr < P.minRR - 1e-9) warns.push(`⚠ هدف بعدی نزدیک است (R:R ${fmtN(p.rr)} کمتر از ${P.minRR})؛ با این فاصله سیگنال صادر نمی‌شود مگر ورود بهتری پیدا شود.`);
+  return `<div class="card scen ${isMain ? 'main' : ''} ${p.allowed ? '' : 'off'}">
+    <h3>${dirBadge(p.dir)} ${title}</h3>
+    <div>${status}</div>
+    <p style="margin:8px 0">${body}</p>
+    <div class="kv">
+      <div><span>ورود تقریبی</span>${num(fmtP(p.entry))}</div>
+      <div><span>حد ضرر</span>${num(fmtP(p.sl))}</div>
+      <div><span>هدف ${p.tpFromLevel ? '(ناحیه‌ی بعدی)' : '(بر اساس R)'}</span>${num(fmtP(p.tp))}</div>
+      <div><span>R:R</span>${num(fmtN(p.rr))}</div>
+      <div><span>ریسک</span>${num(fmtN(p.riskPct))}%</div>
+    </div>
+    ${warns.map(w => `<div class="amber" style="font-size:13px;margin-top:6px">${w}</div>`).join('')}
+  </div>`;
+}
+
+function m15Card(o, rep, plans) {
+  const P = o.ctx.P;
+  const sig = rep.signal && !activeLock(o, rep.signal.dir, rep.signal.entry, rep.time) ? rep.signal : null;
+  let txt;
+  if (sig) {
+    txt = `<div class="card signal ${sig.dir === 'SHORT' ? 'short' : ''}" style="padding:10px"><div class="big">🎯 سیگنال ورود ${dirBadge(sig.dir)} <span class="pill">امتیاز ${sig.total}</span></div>
+      <div class="kv"><div><span>ورود</span>${num(fmtP(sig.entry))}</div><div><span>حد ضرر</span>${num(fmtP(sig.sl))}</div><div><span>حد سود ۱</span>${num(fmtP(sig.tp1))}</div>
+      <div><span>حد سود ۲</span>${num(fmtP(sig.tp2))}</div><div><span>R:R</span>${num(fmtN(sig.rr))}</div><div><span>ریسک</span>${num(fmtN(sig.riskPct))}%</div></div>
+      <p style="margin:8px 0 0">کندل ۱۵ دقیقه‌ی ${fmtT(rep.time)} همه‌ی شرایط را کامل کرد${sig.pattern ? ` (الگوی ${sig.pattern})` : ''}. RVOL: ${num(fmtN(sig.rvol))}</p></div>`;
+  } else {
+    const act = rep.setups.find(s => s.location && s.trigger && !plans[s.dir].lock);
+    if (act) {
+      const c = act.trigger.checks, L = act.dir === 'LONG', pl = act.trigger.plan;
+      const li = (ok, t) => `<li>${ok ? '✅' : '⬜'} ${t}</li>`;
+      const missing = [];
+      if (!c.breakout) missing.push(`یک کندل ۱۵م ${L ? 'بالای' : 'زیر'} ${num(fmtP(c.breakLevel))} بسته شود`);
+      if (!c.ema) missing.push(`قیمت ${L ? 'بالای' : 'زیر'} EMA${P.m15Ema} (${num(fmtP(c.emaVal))}) برود`);
+      if (!c.rvolOk) missing.push(`حجم کندل ماشه حداقل ${P.rvolMin}× میانگین باشد`);
+      txt = `<p><b class="amber">انتظار ورود ${L ? 'خرید' : 'فروش'} داریم.</b> قیمت در ناحیه‌ی ${L ? 'حمایت' : 'مقاومت'} است و حالا فقط ماشه‌ی ۱۵ دقیقه باقی مانده.</p>
+        <ul class="chk">
+          ${li(c.pullback, `پولبک به ناحیه در ${P.m15SetupBars} کندل اخیر`)}
+          ${li(c.breakout, `بسته شدن ${L ? 'بالای سقف' : 'زیر کف'} ${P.m15BreakBars} کندل قبل → سطح ماشه: ${num(fmtP(c.breakLevel))}`)}
+          ${li(c.ema, `${L ? 'بالای' : 'زیر'} EMA${P.m15Ema} → ${num(fmtP(c.emaVal))}`)}
+          ${li(c.rvolOk, `حجم ≥ ${P.rvolMin}× میانگین (کندل فعلی: ${num(fmtN(c.rvol))}×)`)}
+          ${li(c.rrOk, `R:R ≥ ${P.minRR} (با ورود الان: ${num(fmtN(pl.rr))})`)}
+          ${li(c.riskOk, `فاصله‌ی حد ضرر ≤ ${P.maxRiskPct}% (الان: ${num(fmtN(pl.riskPct))}%)`)}
+        </ul>
+        ${missing.length ? `<p><b>برای صدور سیگنال باید:</b> ${missing.join('، ')}.</p>` : ''}
+        <p class="mute">اگر ماشه بخورد: ورود حدود ${num(fmtP(pl.entry))}، حد ضرر ${num(fmtP(pl.sl))}، هدف ${num(fmtP(pl.tp1))}.</p>`;
+    } else {
+      const ps = rep.dirs.map(dd => plans[dd]).filter(p => !p.lock).sort((a, b) => a.distPct - b.distPct);
+      const p = ps[0];
+      txt = `<p><b>در تایم ۱۵ دقیقه فعلاً انتظار ورود نداریم.</b></p>` +
+        (p ? `<p>ابتدا قیمت باید به ${p.viaChan ? (p.dir === 'LONG' ? 'کف' : 'سقف') + ' کانال روزانه' : `ناحیه‌ی ${p.dir === 'LONG' ? 'حمایت' : 'مقاومت'} ${rng(p.zone)}`} برسد (${num(fmtN(Math.abs(p.distPct)))}% فاصله). تا آن موقع دنبال کردن ۱۵ دقیقه لازم نیست؛ با روشن بودن حالت خودکار، رسیدن به ناحیه و سیگنال اعلام می‌شود.</p>`
+          : (() => { const lk = rep.dirs.map(dd => plans[dd]).find(p => p.lock);
+              return lk ? `<p>ناحیه‌ی ${lk.dir === 'LONG' ? 'خرید' : 'فروش'} ${rng(lk.zone)} به‌خاطر حد ضرر اخیر تا <b>${fmtT(lk.lock.until)}</b> قفل است. بعد از آن، اگر قیمت هنوز در این ناحیه باشد، دوباره منتظر ماشه‌ی ۱۵ دقیقه می‌مانیم.</p>`
+                : '<p>جهت مجازی برای معامله وجود ندارد (تنظیمات Long/Short را بررسی کنید).</p>'; })());
+    }
+  }
+  return `<div class="card" style="margin-top:12px"><h3>🎯 تایم ۱۵ دقیقه — انتظار ورود</h3>
+    <div class="grid g2"><div class="chartbox small"><canvas id="cM"></canvas><div class="cinfo" id="iM"></div></div><div>${txt}</div></div></div>`;
+}
+
+function redrawReportCharts() {
+  if (isTrend()) return redrawTrendCharts();
+  const o = S.O[S.sel]; if (!o || !o.view || o.view.error || !rc.D) return;
+  const ctx = o.ctx, rep = o.view, d = rep.daily, price = rep.price;
+  const kz = keyZones(d, price);
+  const zones = kz.list;
+  const ch = d.chan, t0 = ctx.D.t[ch.startIdx], chan = { t0, t1: ctx.D.t[ch.endIdx] + 86400 * 3, f: t => ch.at((t - t0) / 86400) };
+  const endD = ctx.D.n - 1 - (S.replayM == null ? 0 : ctx.D.n - 1 - rep.i);
+  const endH = rep.k, endM = rep.m;
+  rc.D.setData(ctx.D, 86400, { price, zones, zoneLabels: true, chan, emas: [{ arr: ctx.D.emaF, color: '#60a5fa' }, { arr: ctx.D.emaS, color: '#c084fc' }], showVol: true, title: 'Daily', end: endD, view: 120 });
+  rc.H.setData(ctx.H, 14400, { price, zones, zoneLabels: true, chan, emas: [{ arr: ctx.H.ema, color: '#60a5fa' }], showVol: true, title: '4H', end: endH, view: 150 });
+  if (rc.M) {
+    const hl = [];
+    const sig = rep.signal;
+    if (sig) hl.push({ p: sig.entry, c: '#3b82f6', t: 'ورود' }, { p: sig.sl, c: '#ef4444', t: 'SL' }, { p: sig.tp1, c: '#22c55e', t: 'TP' });
+    else {
+      const act = rep.setups.find(s => s.location && s.trigger);
+      if (act) hl.push({ p: act.trigger.checks.breakLevel, c: '#f59e0b', t: 'سطح ماشه' }, { p: act.trigger.plan.sl, c: '#ef4444', t: 'SL' });
+    }
+    rc.M.setData(ctx.M, 900, { price, zones: zones.filter(z => Math.abs(z.mid - price) / price < 0.06), zoneLabels: true, emas: [{ arr: ctx.M.ema, color: '#60a5fa' }], showVol: true, hlines: hl, title: '15m', end: endM, view: 140 });
+  }
+}
+
+function tradesTable(rows, compact, withSym) {
+  if (!rows.length) return '<div class="mute">معامله‌ای ثبت نشده</div>';
+  return `<div class="scroll"><table><tr>${withSym ? '<th>ارز</th>' : ''}<th>جهت</th><th>زمان ورود</th><th>ورود</th><th>SL</th><th>TP</th><th>R:R</th>${compact ? '' : '<th>امتیاز</th><th>زمان خروج</th>'}<th>نتیجه</th></tr>
+  ${rows.map(({ t, sym }) => {
+    const idx = S.O[sym].bt.trades.indexOf(t);
+    const res = t.status === 'OPEN' ? `<span class="amber">باز${t.partialDone ? ' (½ بسته)' : ''}</span>` : `<span class="${t.R > 0.01 ? 'green' : t.R < -0.01 ? 'red' : 'mute'} num">${t.why} ${fmtN(t.R)}R</span>`;
+    return `<tr class="click" data-sym="${sym}" data-ti="${idx}">${withSym ? `<td><b>${short(sym)}</b></td>` : ''}<td>${dirBadge(t.dir)}</td><td class="num">${fmtT(t.entryTime)}</td><td class="num">${fmtP(t.entry)}</td>
+    <td class="num">${fmtP(t.sl)}</td><td class="num">${fmtP(t.tp1)}</td><td class="num">${fmtN(t.rr)}</td>${compact ? '' : `<td>${t.total}</td><td class="num">${t.exitTime ? fmtT(t.exitTime) : '-'}</td>`}<td>${res}</td></tr>`; }).join('')}</table></div>`;
+}
+function bindTradeRows(root) {
+  root.querySelectorAll('tr[data-ti]').forEach(tr => tr.onclick = () => {
+    const sym = tr.dataset.sym;
+    if (sym !== S.sel) selectSym(sym);
+    S.focusTrade = S.O[sym].bt.trades[+tr.dataset.ti];
+    $('#tfSel').value = '15min';
+    showTab('chart');
+    big.centerOn(S.focusTrade.entryTime);
+  });
+}
+
+/* ---------------- BACKTEST TAB ---------------- */
+$('#btnBt').onclick = () => { if (S.data) buildAll(); };
+function renderBt() {
+  const rows = S.syms.map(s => S.O[s]).filter(o => o.bt);
+  if (!rows.length) return;
+  const all = rows.flatMap(o => o.bt.trades.map(t => ({ t, sym: o.sym })));
+  const closed = all.filter(x => x.t.status === 'CLOSED').sort((a, b) => a.t.exitTime - b.t.exitTime);
+  let eq = 0, peak = 0, dd = 0; S.curve = [];
+  for (const x of closed) { eq += x.t.R; peak = Math.max(peak, eq); dd = Math.max(dd, peak - eq); S.curve.push(eq); }
+  const wins = closed.filter(x => x.t.R > 0.01).length;
+  const pos = closed.filter(x => x.t.R > 0).reduce((s, x) => s + x.t.R, 0), neg = -closed.filter(x => x.t.R < 0).reduce((s, x) => s + x.t.R, 0);
+  const n = closed.length;
+  $('#btBody').innerHTML = `<div class="grid g4">
+    <div class="card"><h3>معاملات بسته (همه‌ی ارزها)</h3><div class="big">${n}</div><small class="mute">${rows.length} ارز · باز ${all.length - n}</small></div>
+    <div class="card"><h3>درصد برد</h3><div class="big ${wins / n >= 0.4 ? 'green' : 'red'}">${fmtN(n ? wins / n * 100 : 0, 1)}%</div></div>
+    <div class="card"><h3>مجموع / میانگین R</h3><div class="big ${eq >= 0 ? 'green' : 'red'} num">${fmtN(eq)}R</div><small class="mute">میانگین ${num(fmtN(n ? eq / n : 0))}R (بعد از کارمزد)</small></div>
+    <div class="card"><h3>Profit Factor / بیشترین افت</h3><div class="big num">${fmtN(neg > 0 ? pos / neg : Infinity)}</div><small class="mute">بیشترین افت ${num(fmtN(dd))}R</small></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>نتیجه به تفکیک ارز</h3><table><tr><th>ارز</th><th>معاملات</th><th>برد</th><th>مجموع R</th><th>PF</th><th>افت</th><th>Long/Short</th></tr>
+      ${rows.sort((a, b) => b.bt.stats.totalR - a.bt.stats.totalR).map(o => { const s = o.bt.stats; return `<tr class="click" data-pick="${o.sym}"><td><b>${short(o.sym)}</b></td><td>${s.n}</td><td>${fmtN(s.winRate, 0)}%</td>
+        <td class="num ${s.totalR >= 0 ? 'green' : 'red'}">${fmtN(s.totalR)}</td><td class="num">${fmtN(s.pf)}</td><td class="num">${fmtN(s.maxDD)}</td><td>${s.longs}/${s.shorts}</td></tr>`; }).join('')}</table></div>
+    <div class="card"><h3>منحنی سرمایه‌ی ترکیبی (R)</h3><canvas class="eq" id="eqCanvas"></canvas></div>
+  </div>
+  <div class="card" style="margin-top:12px;border-color:#3b82f6"><h3>💰 شبیه‌سازی سرمایه — مدیریت سرمایه و کارمزد</h3>
+    <div id="portForm" class="grid g4" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"></div>
+    <div class="toolbar" style="margin-top:10px"><button id="btnPort" class="primary">▶ اجرای شبیه‌سازی</button>
+      <span class="mute" style="font-size:12px">حجم هر معامله طوری حساب می‌شود که اگر حد ضرر بخورد (با کارمزد و لغزش)، فقط «ریسک هر معامله» از موجودی کم شود.</span></div>
+    <div id="portOut"></div></div>
+  <div class="card" style="margin-top:12px"><h3>همه‌ی معاملات سیگنال (بر حسب R، بدون محدودیت سرمایه · کلیک = نمایش روی نمودار)</h3>${tradesTable(all.sort((a, b) => b.t.entryTime - a.t.entryTime), false, true)}</div>`;
+  bindTradeRows($('#btBody'));
+  renderPortForm(); runPort();
+  $('#btBody').querySelectorAll('tr[data-pick]').forEach(tr => tr.onclick = () => { selectSym(tr.dataset.pick); showTab('ana'); });
+  drawEquity();
+}
+function drawEquity() {
+  const cv = document.getElementById('eqCanvas'); if (!cv || !S.curve || !cv.offsetWidth) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.offsetWidth, H = cv.offsetHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext('2d'); g.scale(dpr, dpr); g.direction = 'ltr'; g.clearRect(0, 0, W, H);
+  const pts = [0, ...S.curve];
+  if (pts.length < 2) return;
+  const mn = Math.min(...pts), mx = Math.max(...pts);
+  const y = v => H - 20 - (v - mn) / ((mx - mn) || 1) * (H - 40), x = i => 44 + i / (pts.length - 1) * (W - 60);
+  g.strokeStyle = '#26324f'; g.beginPath(); g.moveTo(44, y(0)); g.lineTo(W - 16, y(0)); g.stroke();
+  g.fillStyle = '#8b96b0'; g.font = '11px Tahoma'; g.fillText('0R', 6, y(0) + 4); g.fillText(fmtN(mx, 1) + 'R', 6, y(mx) + 4);
+  g.strokeStyle = pts[pts.length - 1] >= 0 ? '#22c55e' : '#ef4444'; g.lineWidth = 2; g.beginPath();
+  pts.forEach((p, i) => i ? g.lineTo(x(i), y(p)) : g.moveTo(x(i), y(p))); g.stroke();
+}
+
+
+
+/* ===================== TREND STRATEGY UI ===================== */
+const isTrend = () => S.params.strategy === 'trend';
+function trendStatus(o) {
+  const ev = o.ev;
+  if (!ev || ev.error) return { rank: 8, cls: 'st-wait', txt: ev ? ev.error : 'بدون دیتا' };
+  if (ev.signal) return { rank: 0, cls: 'st-sig', txt: `🎯 ورود ${ev.signal.dir === 'LONG' ? 'خرید' : 'فروش'} — همین الان` };
+  if (ev.open) { const r = curR(ev.open, ev.price); return { rank: 1, cls: 'st-open', txt: `📌 ${ev.open.dir === 'LONG' ? 'خرید' : 'فروش'} باز · ${fmtN(r)}R` }; }
+  if (ev.pending) return { rank: 2, cls: 'st-zone', txt: `⏳ شکست ${ev.pending.dir === 'LONG' ? 'سقف' : 'کف'} — منتظر پولبک ۱۵م` };
+  if (ev.trend === 0) return { rank: 6, cls: 'st-wait', txt: 'روند روزانه خنثی — معامله نداریم', dist: 99 };
+  const L = ev.trend > 0, lvl = L ? ev.h4.hi : ev.h4.lo, dist = Math.abs(lvl - ev.price) / ev.price * 100;
+  const near = Math.abs(lvl - ev.price) <= 1.5 * ev.h4.atr;
+  return { rank: near ? 3 : 4, cls: near ? 'st-near' : 'st-wait', dist, txt: `${near ? 'نزدیک' : 'تا'} شکست ${L ? 'سقف' : 'کف'} ۴ساعته: ${fmtN(dist)}%` };
+}
+const curR = (t, price) => (t.dir === 'LONG' ? price - t.entry : t.entry - price) / Math.abs(t.entry - t.sl);
+function sizeHint(entry, stop) {
+  const p = S.port, risk = p.capital * p.riskPct / 100, per = Math.abs(entry - stop), qty = risk / per, notional = qty * entry;
+  return `با سرمایه‌ی ${num('$' + p.capital)} و ریسک ${p.riskPct}%: ریسک ${num('$' + fmtN(risk))} → حجم پوزیشن ${num('$' + fmtN(notional))}${p.mode === 'futures' ? ` (با اهرم ${p.leverage}: مارجین حدود ${num('$' + fmtN(notional / p.leverage))})` : ''}`;
+}
+
+function renderTrendReport() {
+  const o = S.O[S.sel]; if (!o) return;
+  if (!o.ctx) { $('#report').innerHTML = `<div class="card red">${o.err}</div>`; return; }
+  const ctx = o.ctx, M = ctx.M, TP = Object.assign({}, Engine.TREND_DEFAULTS, ctx.P);
+  const m = S.replayM == null ? M.n - 1 : S.replayM;
+  const ev = S.replayM == null ? o.ev : Engine.evaluateTrend(ctx, M.t[m] + 900);
+  const rep = S.replayM == null ? o.rep : Engine.evaluateAt(ctx, m);
+  o.tview = ev; o.view = rep;
+  const replayBox = `<details class="card" style="margin-top:12px" ${S.replayM != null ? 'open' : ''}><summary>🕘 تست روی گذشته (تحلیل را در هر لحظه‌ی دلخواه ببینید)</summary>
+      <div class="toolbar" style="margin:8px 0 0"><span>زمان: <b class="num" id="rpT">${fmtT(M.t[m] + 900)}</b></span><button id="rpLive" class="primary">برگشت به زنده</button></div>
+      <input id="replay" type="range" min="${Math.min(M.n - 1, 200)}" max="${M.n - 1}" value="${m}"></details>`;
+  if (ev.error) { $('#report').innerHTML = `<div class="card amber">${ev.error}</div>` + replayBox; bindReplay(); return; }
+  const price = ev.price, a4 = ev.h4.atr, d = ev.daily, ch = chg24(M);
+  const st = S.replayM == null ? o.status : trendStatus(Object.assign({}, o, { ev }));
+  const trTxt = ev.trend > 0 ? '<b class="green">صعودی</b>' : ev.trend < 0 ? '<b class="red">نزولی</b>' : '<b>خنثی</b>';
+  const why = [d.c > d.e50 ? 'قیمت بالای EMA50' : 'قیمت زیر EMA50', d.e20 > d.e50 ? 'EMA20 بالای EMA50' : 'EMA20 زیر EMA50'];
+  const pHi = (ev.h4.hi - price) / price * 100, pLo = (ev.h4.lo - price) / price * 100;
+  const kz = !rep.error ? keyZones(rep.daily, price) : { res: [], sup: [], inside: [], list: [] };
+  const zTxt = z => `${rng(z)} <span class="mute">(${z.touches} برخورد)</span>`;
+
+  let concl;
+  if (ev.signal) concl = `<b class="green">سیگنال ورود ${ev.signal.dir === 'LONG' ? 'خرید' : 'فروش'} همین الان صادر شده است.</b>`;
+  else if (ev.open) concl = `یک معامله‌ی ${ev.open.dir === 'LONG' ? 'خرید' : 'فروش'} باز است؛ فقط حد ضرر دنبال‌کننده را به‌روز نگه دارید (${num(fmtP(ev.open.stop))}).`;
+  else if (ev.pending) concl = `<b class="amber">شکست ۴ساعته رخ داده؛ در ۱۵ دقیقه منتظر پولبک و ماشه‌ی ورود هستیم.</b>`;
+  else if (ev.trend === 0) concl = 'روند روزانه مشخص نیست؛ طبق استراتژی معامله‌ای نمی‌گیریم تا روند شکل بگیرد.';
+  else concl = `منتظر شکست ${ev.trend > 0 ? 'سقف' : 'کف'} ۴ساعته در ${num(fmtP(ev.trend > 0 ? ev.h4.hi : ev.h4.lo))} هستیم (${num(fmtN(Math.abs(ev.trend > 0 ? pHi : pLo)))}% فاصله). تا آن موقع تایم ۱۵ دقیقه لازم نیست.`;
+
+  const scen = dir => {
+    const L = dir === 'LONG', ok = L ? ev.trend > 0 : ev.trend < 0, lvl = L ? ev.h4.hi : ev.h4.lo;
+    const stop = L ? lvl - TP.trK * a4 : lvl + TP.trK * a4, riskPct = TP.trK * a4 / lvl * 100;
+    const fail = L ? lvl - TP.trFailAtr * a4 : lvl + TP.trFailAtr * a4;
+    const status = !ok ? `<span class="mute">⛔ غیرفعال: روند روزانه ${L ? 'صعودی' : 'نزولی'} نیست</span>`
+      : ev.pending && ev.pending.dir === dir ? '<b class="amber">⏳ شکست رخ داده — منتظر ماشه‌ی ۱۵ دقیقه</b>'
+      : ev.open && ev.open.dir === dir ? '<b class="green">📌 معامله باز است</b>'
+      : `⏳ قیمت ${num(fmtN(Math.abs(L ? pHi : pLo)))}% با سطح شکست فاصله دارد`;
+    return `<div class="card scen ${ok ? 'main' : 'off'}"><h3>${dirBadge(dir)} ${L ? 'شکست سقف ۴ساعته' : 'شکست کف ۴ساعته'}</h3><div>${status}</div>
+      <p style="margin:8px 0">اگر یک کندل ۴ساعته ${L ? 'بالای سقف' : 'زیر کف'} ${TP.trN} کندل اخیر یعنی ${num(fmtP(lvl))} بسته شود، تا ${fmtN(TP.trWin / 4, 0)} ساعت در ۱۵ دقیقه منتظر می‌مانیم
+      قیمت به حدود ${num(fmtP(lvl))} برگردد و یک کندل ${L ? 'سبز بالای' : 'قرمز زیر'} EMA20 بسته شود. حد ضرر اولیه ${TP.trK}×ATR از ورود است و حد سود ثابت ندارد؛
+      با هر کندل ۴ساعته حد ضرر به فاصله‌ی ${TP.trK}×ATR پشت قیمت جابه‌جا می‌شود. اگر ۱۵ دقیقه ${L ? 'زیر' : 'بالای'} ${num(fmtP(fail))} بسته شود، شکست باطل است.</p>
+      <div class="kv"><div><span>سطح شکست / ورود تقریبی</span>${num(fmtP(lvl))}</div><div><span>حد ضرر اولیه (تقریبی)</span>${num(fmtP(stop))}</div>
+      <div><span>ریسک تا حد ضرر</span>${num(fmtN(riskPct) + '%')}</div><div><span>ATR ۴ساعته</span>${num(fmtP(a4))}</div><div><span>سطح ابطال</span>${num(fmtP(fail))}</div></div></div>`;
+  };
+
+  // 15m card
+  let m15;
+  const e20 = ctx.M.e20 ? ctx.M.e20[ev.m] : NaN;
+  if (ev.signal) {
+    const s = ev.signal;
+    m15 = `<div class="card signal ${s.dir === 'SHORT' ? 'short' : ''}" style="padding:10px"><div class="big">🎯 ورود ${dirBadge(s.dir)}</div>
+      <div class="kv"><div><span>ورود</span>${num(fmtP(s.entry))}</div><div><span>حد ضرر اولیه</span>${num(fmtP(s.sl))}</div><div><span>ریسک</span>${num(fmtN(Math.abs(s.entry - s.sl) / s.entry * 100) + '%')}</div><div><span>حد سود</span>ندارد (دنبال‌کننده)</div></div>
+      <p style="margin:8px 0 0">${sizeHint(s.entry, s.sl)}</p></div>`;
+  } else if (ev.open) {
+    const t = ev.open, r = curR(t, price);
+    m15 = `<p><b>معامله‌ی باز ${dirBadge(t.dir)}</b> از ${fmtT(t.entryTime)}</p><div class="kv"><div><span>ورود</span>${num(fmtP(t.entry))}</div><div><span>حد ضرر فعلی (دنبال‌کننده)</span><b class="num red">${fmtP(t.stop)}</b></div>
+      <div><span>وضعیت</span><b class="num ${r >= 0 ? 'green' : 'red'}">${fmtN(r)}R</b></div><div><span>حد ضرر اولیه</span>${num(fmtP(t.sl))}</div></div>
+      <p class="mute" style="margin-top:8px">در صرافی، حد ضرر را روی ${num(fmtP(t.stop))} قرار دهید و بعد از بسته شدن هر کندل ۴ساعته اینجا را برای مقدار جدید چک کنید. خروج فقط با خوردن حد ضرر است.</p>`;
+  } else if (ev.pending) {
+    const p = ev.pending, L = p.dir === 'LONG', li = (ok, t) => `<li>${ok ? '✅' : '⬜'} ${t}</li>`;
+    m15 = `<p><b class="amber">انتظار ورود ${L ? 'خرید' : 'فروش'} داریم.</b></p><ul class="chk">
+      ${li(true, `شکست ${L ? 'سقف' : 'کف'} ۴ساعته در ${num(fmtP(p.level))} (${fmtT(p.time)})`)}
+      ${li(!!p.touched, `پولبک ۱۵ دقیقه به ${num(fmtP(L ? p.level + TP.trTouchAtr * p.atr : p.level - TP.trTouchAtr * p.atr))} یا ${L ? 'پایین‌تر' : 'بالاتر'}`)}
+      ${li(false, `بسته شدن کندل ${L ? 'سبز بالای' : 'قرمز زیر'} EMA20 (${num(fmtP(e20))})`)}</ul>
+      <p class="mute">ابطال: بسته شدن ۱۵م ${L ? 'زیر' : 'بالای'} ${num(fmtP(L ? p.level - TP.trFailAtr * p.atr : p.level + TP.trFailAtr * p.atr))} · مهلت تا ${fmtT(p.expire)}</p>
+      <p class="mute">${sizeHint(p.level, L ? p.level - TP.trK * p.atr : p.level + TP.trK * p.atr)}</p>`;
+  } else m15 = `<p><b>در تایم ۱۵ دقیقه فعلاً کاری نداریم.</b></p><p>${ev.trend === 0 ? 'روند روزانه خنثی است.' : `اول باید کندل ۴ساعته ${ev.trend > 0 ? 'بالای' : 'زیر'} ${num(fmtP(ev.trend > 0 ? ev.h4.hi : ev.h4.lo))} بسته شود. با حالت خودکار، شکست و ورود اعلام می‌شود.`}</p>`;
+
+  $('#report').innerHTML = `
+  <div class="card"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <h2>${short(o.sym)} <span class="mute" style="font-size:13px">/USDT</span></h2>
+    <span class="big num">${fmtP(price)}</span><span class="num ${ch >= 0 ? 'green' : 'red'}">${fmtPct(ch)} (۲۴ساعت)</span>
+    ${dirBadge(ev.trend > 0 ? 'BULL' : ev.trend < 0 ? 'BEAR' : 'RANGE')}<span class="wl-st ${st.cls}" style="font-size:14px">${st.txt}</span>
+    <div class="spacer"></div><span class="mute" style="font-size:12px">استراتژی روند · ${S.replayM == null ? 'زنده' : '🕘 تست گذشته'} · ${fmtT(ev.time)}</span></div></div>
+  <div class="card" style="margin-top:12px"><h3>📋 تحلیل وضعیت</h3>
+    <p><b>روند روزانه:</b> ${trTxt} — ${why.join('، ')}. ${ev.trend > 0 ? 'فقط معامله‌ی خرید مجاز است.' : ev.trend < 0 ? 'فقط معامله‌ی فروش مجاز است.' : 'معامله‌ای مجاز نیست.'}</p>
+    <p><b>کانال ۴ساعته (${TP.trN} کندل اخیر):</b> سقف ${num(fmtP(ev.h4.hi))} <span class="mute">(${fmtPct(pHi)})</span> و کف ${num(fmtP(ev.h4.lo))} <span class="mute">(${fmtPct(pLo)})</span>؛ ATR ۴ساعته ${num(fmtP(a4))} (${num(fmtN(a4 / price * 100))}% قیمت).</p>
+    <p><b>سطوح مهم روزانه:</b> مقاومت ${kz.res.length ? kz.res.slice(0, 2).map(zTxt).join('، ') : '—'} · حمایت ${kz.sup.length ? kz.sup.slice(0, 2).map(zTxt).join('، ') : '—'}${kz.inside.length ? ` · <span class="amber">قیمت داخل ناحیه‌ی ${rng(kz.inside[0])}</span>` : ''}</p>
+    <p style="margin:0;padding-top:6px;border-top:1px dashed var(--line)"><b>جمع‌بندی:</b> ${concl}</p></div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>📈 روزانه — روند، سطوح و کانال</h3><div class="chartbox"><canvas id="cD"></canvas><div class="cinfo" id="iD"></div></div></div>
+    <div class="card"><h3>📈 ۴ ساعته — کانال شکست (نارنجی)</h3><div class="chartbox"><canvas id="cH"></canvas><div class="cinfo" id="iH"></div></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">${scen('LONG')}${scen('SHORT')}</div>
+  <div class="card" style="margin-top:12px"><h3>🎯 تایم ۱۵ دقیقه — ورود و مدیریت معامله</h3>
+    <div class="grid g2"><div class="chartbox small"><canvas id="cM"></canvas><div class="cinfo" id="iM"></div></div><div>${m15}</div></div></div>
+  <div class="card" style="margin-top:12px"><h3>🧾 معاملات اخیر این ارز (بک‌تست استراتژی روند)</h3>${tradesTable(o.bt.trades.slice(-10).reverse().map(t => ({ t, sym: o.sym })), true)}</div>` + replayBox;
+  bindTradeRows($('#report')); bindReplay();
+  rc = { D: new Chart($('#cD'), $('#iD')), H: new Chart($('#cH'), $('#iH')), M: new Chart($('#cM'), $('#iM')) };
+  redrawTrendCharts();
+}
+function redrawTrendCharts() {
+  const o = S.O[S.sel]; if (!o || !o.tview || o.tview.error || !rc.D) return;
+  const ctx = o.ctx, ev = o.tview, rep = o.view, price = ev.price;
+  const zones = rep && !rep.error ? keyZones(rep.daily, price).list : [];
+  let chan = null;
+  if (rep && !rep.error) { const ch = rep.daily.chan, t0 = ctx.D.t[ch.startIdx]; chan = { t0, t1: ctx.D.t[ch.endIdx] + 86400 * 3, f: t => ch.at((t - t0) / 86400) }; }
+  const trades = ev.bt.trades;
+  rc.D.setData(ctx.D, 86400, { price, zones, zoneLabels: true, chan, emas: [{ arr: ctx.D.e20, color: '#60a5fa' }, { arr: ctx.D.e50, color: '#c084fc' }], showVol: true, title: 'Daily · EMA20/50', end: ev.j, view: 120 });
+  const hl4 = [];
+  if (ev.open) hl4.push({ p: ev.open.stop, c: '#ef4444', t: 'حد ضرر فعلی' });
+  rc.H.setData(ctx.H, 14400, { price, zones: zones.filter(z => z.important), emas: [{ arr: ctx.H.dHi, color: '#f59e0b' }, { arr: ctx.H.dLo, color: '#f59e0b' }], trades, hlines: hl4, showVol: true, title: '4H · Donchian ' + (ctx.TP ? ctx.TP.trN : 40), end: ev.i, view: 150 });
+  const hl = [];
+  if (ev.pending) { const p = ev.pending, TP = ctx.TP; hl.push({ p: p.level, c: '#f59e0b', t: 'سطح شکست' }, { p: p.dir === 'LONG' ? p.level - TP.trFailAtr * p.atr : p.level + TP.trFailAtr * p.atr, c: '#ef4444', t: 'ابطال' }); }
+  if (ev.open) hl.push({ p: ev.open.entry, c: '#3b82f6', t: 'ورود' }, { p: ev.open.stop, c: '#ef4444', t: 'حد ضرر' });
+  rc.M.setData(ctx.M, 900, { price, emas: [{ arr: ctx.M.e20, color: '#60a5fa' }], trades, hlines: hl, showVol: true, title: '15m · EMA20', end: ev.m, view: 140 });
+}
+
+/* ---------------- PORTFOLIO SIM ---------------- */
+const PORT_FIELDS = [
+  ['capital', 'سرمایه اولیه (USDT)', 10], ['riskPct', 'ریسک هر معامله (% موجودی)', 0.25],
+  ['mode', 'نوع بازار', 'mode'], ['leverage', 'حداکثر اهرم (فقط فیوچرز)', 1],
+  ['maxOpen', 'حداکثر معاملات همزمان', 1], ['maxSameDir', 'حداکثر معاملات هم‌جهت', 1],
+  ['takerFee', 'کارمزد Taker (%) — ورود/حد ضرر', 0.01], ['makerFee', 'کارمزد Maker (%) — حد سود', 0.01],
+  ['slipPct', 'لغزش قیمت (%)', 0.01], ['fundingPct8h', 'فاندینگ هر ۸ ساعت (%) — فیوچرز', 0.005],
+  ['minNotional', 'حداقل حجم سفارش (USDT)', 1],
+];
+function renderPortForm() {
+  const f = $('#portForm'); if (!f) return;
+  f.innerHTML = PORT_FIELDS.map(([k, label, step]) => step === 'mode'
+    ? `<label class="set-row" style="grid-template-columns:1fr"><span class="mute" style="font-size:12px">${label}</span>
+        <select data-pk="mode"><option value="spot" ${S.port.mode === 'spot' ? 'selected' : ''}>اسپات (فقط خرید، بدون اهرم)</option>
+        <option value="futures" ${S.port.mode === 'futures' ? 'selected' : ''}>فیوچرز (خرید و فروش)</option></select></label>`
+    : `<label class="set-row" style="grid-template-columns:1fr"><span class="mute" style="font-size:12px">${label}</span>
+        <input type="number" step="${step}" data-pk="${k}" value="${S.port[k]}" style="width:100%;direction:ltr"></label>`).join('');
+  f.querySelector('[data-pk=mode]').onchange = e => {
+    const fut = e.target.value === 'futures';
+    f.querySelector('[data-pk=takerFee]').value = fut ? 0.06 : 0.1;
+    f.querySelector('[data-pk=makerFee]').value = fut ? 0.02 : 0.1;
+  };
+  $('#btnPort').onclick = () => {
+    f.querySelectorAll('[data-pk]').forEach(i => { S.port[i.dataset.pk] = i.dataset.pk === 'mode' ? i.value : Number(i.value); });
+    LS.set('scanner.port.v3', S.port); runPort();
+  };
+}
+function runPort() {
+  const out = $('#portOut'); if (!out) return;
+  const list = S.syms.map(s => S.O[s]).filter(o => o.bt).map(o => ({ sym: o.sym, trades: o.bt.trades, lastPrice: o.ctx.M.c[o.ctx.M.n - 1] }));
+  const r = Engine.portfolio(list, S.port); S.portRes = r;
+  const $u = x => num((x < 0 ? '-' : '') + '$' + fmtN(Math.abs(x)));
+  const gross = r.trades.reduce((s, p) => s + p.pnl + p.entryFee + p.exitFee + p.fund, 0);
+  const skipped = Object.entries(r.skipped);
+  out.innerHTML = `
+  <div class="grid g4" style="margin-top:12px">
+    <div class="card"><h3>موجودی نهایی</h3><div class="big num ${r.final >= r.opt.capital ? 'green' : 'red'}">$${fmtN(r.final)}</div>
+      <small class="mute">از $${r.opt.capital} · بازده ${num(fmtPct(r.retPct))}${r.openPos.length ? ` · ${r.openPos.length} معامله باز (${$u(r.unreal)} سود/زیان شناور)` : ''}</small></div>
+    <div class="card"><h3>کل کارمزدها</h3><div class="big num amber">$${fmtN(r.fees + r.funding)}</div>
+      <small class="mute">معاملات ${$u(r.fees)}${r.opt.mode === 'futures' ? ` + فاندینگ ${$u(r.funding)}` : ''} · ${fmtN((r.fees + r.funding) / r.opt.capital * 100, 1)}% سرمایه اولیه${gross > 0 ? ` · ${fmtN((r.fees + r.funding) / gross * 100, 0)}% سود ناخالص` : ''}</small></div>
+    <div class="card"><h3>بیشترین افت سرمایه</h3><div class="big num red">${fmtN(r.maxDD, 1)}%</div><small class="mute">${$u(-r.maxDDusd)} · بیشترین ضرر پیاپی: ${r.maxStreak} معامله</small></div>
+    <div class="card"><h3>معاملات انجام‌شده</h3><div class="big">${r.taken}</div>
+      <small class="mute">برد ${fmtN(r.winRate, 0)}% · PF ${fmtN(r.pf)} · میانگین سود ${$u(r.avgWin)} / ضرر ${$u(r.avgLoss)}</small></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>منحنی موجودی (USDT)</h3><canvas class="eq" id="portCanvas"></canvas></div>
+    <div class="card"><h3>نتیجه‌ی ماهانه</h3><table><tr><th>ماه (میلادی)</th><th>معاملات</th><th>سود/زیان</th><th>درصد</th></tr>
+      ${Object.entries(r.months).map(([k, v]) => `<tr><td class="num">${k}</td><td>${v.n}</td><td class="${v.pnl >= 0 ? 'green' : 'red'}">${$u(v.pnl)}</td><td class="num ${v.pnl >= 0 ? 'green' : 'red'}">${fmtPct(v.pnl / v.start * 100)}</td></tr>`).join('')}</table>
+      ${skipped.length ? `<h3 style="margin-top:12px">سیگنال‌های ردشده توسط مدیریت سرمایه</h3><ul style="margin:0">${skipped.map(([k, v]) => `<li>${k}: <b>${v}</b></li>`).join('')}</ul>` : ''}</div>
+  </div>
+  <div class="card" style="margin-top:12px"><h3>معاملات با سرمایه‌ی واقعی</h3><div class="scroll"><table>
+    <tr><th>ارز</th><th>جهت</th><th>ورود</th><th>خروج</th><th>حجم معامله</th><th>ریسک</th><th>کارمزد</th><th>نتیجه</th><th>سود/زیان خالص</th><th>موجودی</th></tr>
+    ${r.trades.slice().sort((a, b) => b.exitTime - a.exitTime).map(p => `<tr><td><b>${short(p.sym)}</b></td><td>${dirBadge(p.dir > 0 ? 'LONG' : 'SHORT')}</td>
+      <td class="num">${fmtT(p.entryTime)}</td><td class="num">${fmtT(p.exitTime)}</td><td>${$u(p.notional)}${p.capped ? ' <span class="amber" title="به‌خاطر سقف سرمایه/اهرم کوچک‌تر شد">*</span>' : ''}</td>
+      <td>${$u(p.riskUsd)}</td><td class="amber">${$u(p.entryFee + p.exitFee + p.fund)}</td><td>${p.why}</td>
+      <td class="${p.pnl >= 0 ? 'green' : 'red'}">${$u(p.pnl)}</td><td>${$u(p.balance)}</td></tr>`).join('')}</table></div>
+    <div class="mute" style="font-size:12px;margin-top:6px">* حجم به‌خاطر سقف سرمایه (اسپات) یا اهرم (فیوچرز) کوچک‌تر از مقدار ریسک‌محور شده است. ورود و حد ضرر Market (Taker) با لغزش، حد سود Limit (Maker) فرض شده است.</div></div>`;
+  drawLine(document.getElementById('portCanvas'), [r.opt.capital, ...r.curve.slice(1).map(c => c.eq)], '$', r.opt.capital);
+}
+function drawLine(cv, pts, unit, base) {
+  if (!cv || !cv.offsetWidth || pts.length < 2) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.offsetWidth, H = cv.offsetHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext('2d'); g.scale(dpr, dpr); g.direction = 'ltr'; g.clearRect(0, 0, W, H);
+  const mn = Math.min(...pts), mx = Math.max(...pts);
+  const y = v => H - 20 - (v - mn) / ((mx - mn) || 1) * (H - 40), x = i => 50 + i / (pts.length - 1) * (W - 66);
+  g.strokeStyle = '#26324f'; g.beginPath(); g.moveTo(50, y(base)); g.lineTo(W - 16, y(base)); g.stroke();
+  g.fillStyle = '#8b96b0'; g.font = '11px Tahoma';
+  g.fillText(unit + fmtN(base, 0), 4, y(base) + 4);
+  if (Math.abs(y(mx) - y(base)) > 14) g.fillText(unit + fmtN(mx, 1), 4, y(mx) + 4);
+  if (Math.abs(y(mn) - y(base)) > 14) g.fillText(unit + fmtN(mn, 1), 4, y(mn) + 4);
+  g.strokeStyle = pts[pts.length - 1] >= base ? '#22c55e' : '#ef4444'; g.lineWidth = 2; g.beginPath();
+  pts.forEach((p, i) => i ? g.lineTo(x(i), y(p)) : g.moveTo(x(i), y(p))); g.stroke();
+}
+
+/* ---------------- SETTINGS ---------------- */
+const SET_DEF = [
+  ['استراتژی', [['strategy', 'استراتژی فعال', 'strategy']]],
+  ['استراتژی روند (شکست ۴ساعته + ورود ۱۵م)', [['trN', 'تعداد کندل ۴ساعته برای سقف/کف شکست'], ['trK', 'حد ضرر و حد ضرر دنبال‌کننده (×ATR 4H)', 0.5], ['trWin', 'مهلت پولبک ۱۵ دقیقه (تعداد کندل ۱۵م)'], ['trTouchAtr', 'محدوده‌ی پولبک به سطح شکست (×ATR)', 0.05], ['trFailAtr', 'ابطال شکست اگر قیمت این‌قدر برگردد (×ATR)', 0.1], ['trPartialR', 'خروج نصف حجم در این R و انتقال حد ضرر به ورود (۰ = خاموش)', 0.5]]],
+  ['روند روزانه', [['dEmaFast', 'EMA سریع روزانه'], ['dEmaSlow', 'EMA کند روزانه'], ['dSlopeBars', 'تعداد کندل برای شیب EMA'], ['dSlopeMin', 'حداقل شیب معنادار (×ATR)', 0.01]]],
+  ['سطوح و کانال روزانه', [['pivotLR', 'قدرت Pivot (کندل چپ/راست)'], ['levelLookback', 'بازه جستجوی سطوح (کندل روزانه)'], ['levelClusterAtr', 'تلرانس ادغام سطوح (×ATR)', 0.1], ['levelMaxDistAtr', 'حداکثر فاصله سطح از قیمت (×ATR)', 0.5], ['chanLen', 'طول کانال رگرسیونی (کندل روزانه)']]],
+  ['موقعیت ۴ ساعته', [['h4ZoneAtr', 'حداکثر فاصله تا ناحیه (×ATR 4H)', 0.1], ['h4TouchBars', 'تعداد کندل اخیر برای لمس ناحیه'], ['h4ChanLow', 'محدوده کف کانال (۰ تا ۱)', 0.05], ['h4ChanHigh', 'محدوده سقف کانال (۰ تا ۱)', 0.05]]],
+  ['حجم', [['volSma', 'میانگین حجم برای RVOL'], ['volFast', 'میانگین کوتاه روند حجم'], ['volSlow', 'میانگین بلند روند حجم'], ['rvolMin', 'حداقل RVOL کندل ماشه', 0.1]]],
+  ['ماشه ۱۵ دقیقه', [['m15Ema', 'EMA تایم ۱۵ دقیقه'], ['m15BreakBars', 'شکست سقف/کف چند کندل قبل'], ['m15SetupBars', 'بازه‌ی پولبک (کندل ۱۵م)']]],
+  ['مدیریت ریسک', [['slAtr4h', 'بافر حد ضرر (×ATR 4H)', 0.05], ['maxRiskPct', 'حداکثر فاصله حد ضرر (%)', 0.5], ['minRR', 'حداقل R:R', 0.1], ['maxRR', 'سقف R:R حد سود', 0.5], ['maxTradeBars', 'حداکثر مدت معامله (کندل ۱۵م)'], ['feePct', 'کارمزد هر طرف (%)', 0.01], ['cooldownBars', 'استراحت بعد از هر معامله (کندل)']]],
+  ['بهبودها', [['zoneLockDays', 'قفل ناحیه بعد از حد ضرر (روز، ۰ = خاموش)'], ['partialR', 'خروج نصف حجم در این R (۰ = خاموش)', 0.1], ['requireConfirm', 'کندل تأیید ۴ساعته اجباری', 'bool']]],
+  ['فیلتر نهایی', [['minScore', 'حداقل امتیاز سیگنال (۰ تا ۱۰۰)'], ['enableLong', 'سیگنال Long', 'bool'], ['enableShort', 'سیگنال Short', 'bool'], ['allowCounter', 'اجازه‌ی معامله خلاف روند روزانه', 'bool']]],
+];
+function renderSettings() {
+  $('#setBody').innerHTML = SET_DEF.map(([g, rows]) => `<div class="card set-group"><h4>${g}</h4>${rows.map(([k, label, step]) =>
+    step === 'strategy' ? `<div class="set-row" style="grid-template-columns:1fr 260px"><span>${label}</span><select data-k="${k}">
+        <option value="trend" ${S.params.strategy === 'trend' ? 'selected' : ''}>روند: شکست ۴ساعته + پولبک ۱۵م (پیشنهادی)</option>
+        <option value="levels" ${S.params.strategy === 'levels' ? 'selected' : ''}>برگشت از سطوح (قدیمی)</option></select></div>` :
+    step === 'bool' ? `<div class="set-row"><span>${label}</span><input type="checkbox" data-k="${k}" ${S.params[k] ? 'checked' : ''}></div>`
+      : `<div class="set-row"><span>${label} <small class="mute">(پیش‌فرض ${Engine.DEFAULTS[k]})</small></span><input type="number" step="${step || 1}" data-k="${k}" value="${S.params[k]}"></div>`).join('')}</div>`).join('');
+}
+$('#btnSaveSet').onclick = () => {
+  document.querySelectorAll('#setBody [data-k]').forEach(inp => { S.params[inp.dataset.k] = inp.type === 'checkbox' ? inp.checked : inp.tagName === 'SELECT' ? inp.value : Number(inp.value); });
+  LS.set('scanner.params', S.params);
+  if (S.data) buildAll();
+  alert('تنظیمات ذخیره شد و تحلیل و بک‌تست همه‌ی ارزها دوباره اجرا شد.');
+};
+$('#btnResetSet').onclick = () => { S.params = Object.assign({}, Engine.DEFAULTS); LS.set('scanner.params', {}); renderSettings(); if (S.data) buildAll(); };
+
+/* ---------------- CHART CLASS ---------------- */
+class Chart {
+  constructor(cv, info) {
+    this.cv = cv; this.info = info; this.start = 0; this.count = 160; this.mouse = null; this.drag = null;
+    cv.addEventListener('wheel', e => { e.preventDefault(); this.zoom(e.deltaY > 0 ? 1.15 : 1 / 1.15, e.offsetX); }, { passive: false });
+    cv.addEventListener('mousedown', e => { this.drag = { x: e.offsetX, s: this.start }; });
+    window.addEventListener('mouseup', () => { this.drag = null; });
+    cv.addEventListener('mousemove', e => { this.mouse = { x: e.offsetX, y: e.offsetY };
+      if (this.drag) { this.start = this.drag.s - (e.offsetX - this.drag.x) / this.cw(); this.clamp(); } this.draw(); });
+    cv.addEventListener('mouseleave', () => { this.mouse = null; this.draw(); });
+    window.addEventListener('resize', () => this.draw());
+  }
+  plotW() { return this.W - 74; }
+  cw() { return this.plotW() / this.count; }
+  clamp() { const n = this.S ? this.S.n : 0; this.count = Math.max(20, Math.min(Math.max(n, 20) * 1.2, this.count));
+    this.start = Math.max(-this.count * 0.8, Math.min(n - this.count * 0.2, this.start)); }
+  zoom(f, mx) { const at = this.start + mx / this.cw(); this.count *= f; this.clamp(); this.start = at - mx / this.cw(); this.clamp(); this.draw(); }
+  setData(S, sec, ov, keepView) {
+    const changed = this.S !== S; this.S = S; this.sec = sec; this.ov = ov;
+    if (changed && !keepView) { const end = ov.end != null ? ov.end : S.n - 1, v = ov.view || 160; this.count = v; this.start = end - v + 1 + Math.round(v * 0.08); this.clamp(); }
+    this.draw();
+  }
+  fit() { this.count = this.S.n + 10; this.start = -2; this.clamp(); }
+  centerOn(ts) { if (!this.S) return; const i = this.idxAt(ts); this.count = 200; this.start = i - 80; this.clamp(); this.draw(); }
+  idxAt(ts) { const t = this.S.t; let lo = 0, hi = t.length - 1, a = 0; while (lo <= hi) { const m = (lo + hi) >> 1; if (t[m] <= ts) { a = m; lo = m + 1; } else hi = m - 1; } return a; }
+  tx(ts) { const i = this.idxAt(ts); return (i + 0.5 + (ts - this.S.t[i]) / this.sec - this.start) * this.cw(); }
+  ix(i) { return (i - this.start + 0.5) * this.cw(); }
+  draw() {
+    const cv = this.cv; if (!cv.isConnected || !cv.offsetWidth || !this.S) return;
+    const dpr = window.devicePixelRatio || 1; this.W = cv.offsetWidth; this.H = cv.offsetHeight;
+    cv.width = this.W * dpr; cv.height = this.H * dpr;
+    const g = cv.getContext('2d'); g.scale(dpr, dpr); g.direction = 'ltr'; g.textAlign = 'left';
+    const S = this.S, ov = this.ov, W = this.W, H = this.H, pw = this.plotW(), cw = this.cw();
+    const volH = ov.showVol ? Math.min(70, H * 0.14) : 0, ph = H - 24 - volH;
+    g.fillStyle = '#121a2e'; g.fillRect(0, 0, W, H);
+    const s = Math.max(0, Math.floor(this.start)), e = Math.min(S.n - 1, Math.ceil(this.start + this.count));
+    if (e < s) return;
+    let mn = Infinity, mx = -Infinity, vmx = 0;
+    for (let i = s; i <= e; i++) { mn = Math.min(mn, S.l[i]); mx = Math.max(mx, S.h[i]); vmx = Math.max(vmx, S.q[i]); }
+    for (const hl of ov.hlines || []) { mn = Math.min(mn, hl.p); mx = Math.max(mx, hl.p); }
+    if (ov.plan) for (const v of [ov.plan.sl, ov.plan.tp1]) { mn = Math.min(mn, v); mx = Math.max(mx, v); }
+    const pad = (mx - mn) * 0.07; mn -= pad; mx += pad;
+    const y = p => 8 + (mx - p) / (mx - mn) * (ph - 8);
+    g.save(); g.beginPath(); g.rect(0, 0, pw, ph); g.clip();
+    g.strokeStyle = '#1c2640'; g.lineWidth = 1; g.font = '11px Consolas,monospace';
+    const stepP = niceStep((mx - mn) / 7);
+    for (let p = Math.ceil(mn / stepP) * stepP; p < mx; p += stepP) { g.beginPath(); g.moveTo(0, y(p)); g.lineTo(pw, y(p)); g.stroke(); }
+    // zones
+    const usedY = [];
+    for (const z of ov.zones || []) {
+      if (z.hi < mn || z.lo > mx) continue;
+      const sup = z.kind ? z.kind === 'S' : z.mid < ov.price, inside = z.kind === 'IN';
+      const a = z.important ? 0.2 : 0.09;
+      g.fillStyle = inside ? `rgba(245,158,11,${a})` : sup ? `rgba(34,197,94,${a})` : `rgba(239,68,68,${a})`;
+      g.fillRect(0, y(z.hi), pw, Math.max(2, y(z.lo) - y(z.hi)));
+      if (z.important) { g.strokeStyle = inside ? '#f59e0b88' : sup ? '#22c55e88' : '#ef444488'; g.strokeRect(0, y(z.hi), pw, Math.max(2, y(z.lo) - y(z.hi))); }
+      let ly = y(z.hi) + 2;
+      while (usedY.some(u => Math.abs(u - ly) < 15)) ly += 15;
+      usedY.push(ly);
+      if (ov.zoneLabels) {
+        const lb = `${inside ? 'داخل ناحیه' : sup ? 'حمایت' : 'مقاومت'} ${fmtP(z.lo)}–${fmtP(z.hi)} · ${z.touches}×${z.important ? ' ⭐' : ''}`;
+        g.font = '11px Tahoma'; const tw = g.measureText(lb).width;
+        g.fillStyle = '#0b1020cc'; g.fillRect(pw - tw - 12, ly, tw + 8, 15);
+        g.fillStyle = inside ? '#fbbf24' : sup ? '#4ade80' : '#f87171'; g.fillText(lb, pw - tw - 8, ly + 11);
+        g.font = '11px Consolas,monospace';
+      }
+    }
+    // channel
+    if (ov.chan) {
+      const c = ov.chan, xs = [c.t0, c.t1].map(t => this.tx(t)), pts = [c.t0, c.t1].map(t => c.f(t));
+      [['upper', '#f59e0b'], ['mid', '#64748b'], ['lower', '#f59e0b']].forEach(([k, col]) => {
+        g.strokeStyle = col; g.setLineDash(k === 'mid' ? [4, 4] : []); g.lineWidth = 1.5;
+        g.beginPath(); g.moveTo(xs[0], y(pts[0][k])); g.lineTo(xs[1], y(pts[1][k])); g.stroke(); });
+      g.setLineDash([]);
+    }
+    // candles
+    const bw = Math.max(1, cw * 0.7);
+    for (let i = s; i <= e; i++) {
+      const x = this.ix(i), up = S.c[i] >= S.o[i];
+      g.strokeStyle = g.fillStyle = up ? '#22c55e' : '#ef4444';
+      g.beginPath(); g.moveTo(x, y(S.h[i])); g.lineTo(x, y(S.l[i])); g.stroke();
+      const top = y(Math.max(S.o[i], S.c[i])), bot = y(Math.min(S.o[i], S.c[i]));
+      g.fillRect(x - bw / 2, top, bw, Math.max(1, bot - top));
+    }
+    for (const em of ov.emas || []) {
+      g.strokeStyle = em.color; g.lineWidth = 1.4; g.beginPath(); let st = false;
+      for (let i = s; i <= e; i++) { const v = em.arr[i]; if (isNaN(v)) continue; st ? g.lineTo(this.ix(i), y(v)) : g.moveTo(this.ix(i), y(v)); st = true; }
+      g.stroke();
+    }
+    // trades
+    for (const t of ov.trades || []) {
+      const x0 = this.tx(t.entryTime), x1 = t.exitTime ? this.tx(t.exitTime) : this.ix(S.n - 1);
+      if (x1 < -50 || x0 > pw + 50) continue;
+      const L = t.dir === 'LONG';
+      g.fillStyle = 'rgba(239,68,68,.13)'; g.fillRect(x0, Math.min(y(t.entry), y(t.sl)), Math.max(2, x1 - x0), Math.abs(y(t.sl) - y(t.entry)));
+      if (t.tp1 != null) { g.fillStyle = 'rgba(34,197,94,.13)'; g.fillRect(x0, Math.min(y(t.entry), y(t.tp1)), Math.max(2, x1 - x0), Math.abs(y(t.tp1) - y(t.entry))); }
+      g.fillStyle = L ? '#22c55e' : '#ef4444'; tri(g, x0, y(t.entry), L);
+      if (t.exitTime) { g.fillStyle = t.R > 0 ? '#22c55e' : '#ef4444'; g.beginPath(); g.arc(x1, y(t.exit), 4, 0, 7); g.fill(); }
+      if (t === S_focus()) { g.strokeStyle = '#fff'; g.strokeRect(x0 - 3, Math.min(y(t.sl), y(t.tp1)) - 3, Math.max(6, x1 - x0 + 6), Math.abs(y(t.sl) - y(t.tp1)) + 6); }
+    }
+    if (ov.end != null && ov.end < S.n - 1) { const x = this.ix(ov.end) + cw / 2; g.strokeStyle = '#8b5cf6'; g.setLineDash([6, 4]); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, ph); g.stroke(); g.setLineDash([]); }
+    g.restore();
+    // horizontal lines
+    const hls = (ov.hlines || []).slice();
+    if (ov.plan) hls.push({ p: ov.plan.entry, c: '#3b82f6', t: 'ورود' }, { p: ov.plan.sl, c: '#ef4444', t: 'SL' }, { p: ov.plan.tp1, c: '#22c55e', t: 'TP' });
+    for (const hl of hls) { g.strokeStyle = hl.c; g.setLineDash([5, 3]); g.beginPath(); g.moveTo(0, y(hl.p)); g.lineTo(pw, y(hl.p)); g.stroke(); g.setLineDash([]);
+      g.font = '11px Tahoma'; g.fillStyle = hl.c; g.fillText(`${hl.t} ${fmtP(hl.p)}`, 6, y(hl.p) - 4); g.font = '11px Consolas,monospace'; }
+    // volume
+    if (volH) { const vy = H - 24 - volH;
+      for (let i = s; i <= e; i++) { const hh = S.q[i] / vmx * (volH - 6);
+        g.fillStyle = S.c[i] >= S.o[i] ? 'rgba(34,197,94,.4)' : 'rgba(239,68,68,.4)'; g.fillRect(this.ix(i) - bw / 2, vy + volH - hh, bw, hh); } }
+    // price axis
+    g.fillStyle = '#121a2e'; g.fillRect(pw, 0, W - pw, H); g.fillStyle = '#8b96b0';
+    for (let p = Math.ceil(mn / stepP) * stepP; p < mx; p += stepP) g.fillText(fmtP(p), pw + 5, y(p) + 4);
+    const li = ov.end != null ? Math.min(ov.end, e) : e, lc = S.c[li];
+    g.fillStyle = '#3b82f6'; g.fillRect(pw, y(lc) - 9, W - pw, 18); g.fillStyle = '#fff'; g.fillText(fmtP(lc), pw + 5, y(lc) + 4);
+    g.fillStyle = '#8b96b0'; const every = Math.max(1, Math.round(105 / cw));
+    for (let i = s; i <= e; i++) if (i % every === 0) g.fillText(fmtT(S.t[i]).slice(this.sec >= 86400 ? 0 : 5).replace(',', ''), this.ix(i) - 38, H - 7);
+    if (this.mouse && this.mouse.x < pw) {
+      const i = Math.max(0, Math.min(S.n - 1, Math.floor(this.start + this.mouse.x / cw)));
+      g.strokeStyle = '#475569'; g.setLineDash([3, 3]);
+      g.beginPath(); g.moveTo(this.ix(i), 0); g.lineTo(this.ix(i), H - 24); g.moveTo(0, this.mouse.y); g.lineTo(pw, this.mouse.y); g.stroke(); g.setLineDash([]);
+      if (this.mouse.y < ph) { const p = mx - (this.mouse.y - 8) / (ph - 8) * (mx - mn); g.fillStyle = '#334155'; g.fillRect(pw, this.mouse.y - 9, W - pw, 18); g.fillStyle = '#fff'; g.fillText(fmtP(p), pw + 5, this.mouse.y + 4); }
+      this.info.textContent = `${fmtT(S.t[i])}  O ${fmtP(S.o[i])}  H ${fmtP(S.h[i])}  L ${fmtP(S.l[i])}  C ${fmtP(S.c[i])}`;
+    } else this.info.textContent = ov.title || '';
+  }
+}
+function tri(g, x, yy, up) { g.beginPath(); if (up) { g.moveTo(x, yy + 2); g.lineTo(x - 6, yy + 12); g.lineTo(x + 6, yy + 12); } else { g.moveTo(x, yy - 2); g.lineTo(x - 6, yy - 12); g.lineTo(x + 6, yy - 12); } g.closePath(); g.fill(); }
+function niceStep(r) { const p = Math.pow(10, Math.floor(Math.log10(r))); const f = r / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
+const S_focus = () => S.focusTrade;
+
+/* ---------------- interactive chart tab ---------------- */
+const big = new Chart($('#chart'), $('#chartInfo'));
+function drawChart() {
+  const o = S.O[S.sel]; if (!o || !o.ctx || !o.rep || o.rep.error) return;
+  $('#chartSym').textContent = o.sym;
+  const tf = $('#tfSel').value, ctx = o.ctx, rep = o.rep;
+  const ser = tf === '1day' ? ctx.D : tf === '4hour' ? ctx.H : ctx.M;
+  const ov = { price: rep.price, showVol: $('#optVol').checked, title: `${o.sym} · ${$('#tfSel').selectedOptions[0].text}`, view: 160, zoneLabels: true };
+  if ($('#optEma').checked) ov.emas = tf === '1day' ? [{ arr: ser.emaF, color: '#60a5fa' }, { arr: ser.emaS, color: '#c084fc' }] : [{ arr: ser.ema, color: '#60a5fa' }];
+  if ($('#optZones').checked) ov.zones = keyZones(rep.daily, rep.price).list;
+  if ($('#optChan').checked) { const ch = rep.daily.chan, t0 = ctx.D.t[ch.startIdx]; ov.chan = { t0, t1: ctx.D.t[ch.endIdx] + 86400 * 3, f: t => ch.at((t - t0) / 86400) }; }
+  if ($('#optTrades').checked) ov.trades = o.bt.trades;
+  if (isTrend()) {
+    if (tf === '4hour') ov.emas = (ov.emas || []).concat([{ arr: ctx.H.dHi, color: '#f59e0b' }, { arr: ctx.H.dLo, color: '#f59e0b' }]);
+    const pl = S.focusTrade || (o.ev && o.ev.open);
+    if (pl) ov.hlines = [{ p: pl.entry, c: '#3b82f6', t: 'ورود' }, { p: pl.status === 'OPEN' ? pl.stop : pl.sl, c: '#ef4444', t: pl.status === 'OPEN' ? 'حد ضرر فعلی' : 'SL' }];
+  } else { const plan = S.focusTrade || rep.signal; if (plan) ov.plan = plan; }
+  big.setData(ser, Engine.TF_SEC[tf], ov, big.S === ser);
+}
+['#tfSel', '#optZones', '#optChan', '#optEma', '#optTrades', '#optVol'].forEach(id => $(id).addEventListener('change', () => { if (id === '#tfSel') S.focusTrade = null; drawChart(); }));
+$('#btnFit').onclick = () => { if (big.S) { big.fit(); big.draw(); } };
+
+/* ---------------- HELP ---------------- */
+$('#helpBody').innerHTML = `
+<h3 style="color:var(--text)">راه‌اندازی</h3>
+<ol>
+<li>در اکسل دکمه‌ی <b>Add Symbols</b> را بزنید و ارزها را با کاما وارد کنید (مثلاً <span class="num">BTC,SOL,XRP</span>)، بعد <b>Update + Export</b>.</li>
+<li>این فایل HTML را کنار فایل اکسل و <b>ScannerData.js</b> بگذارید و با Chrome باز کنید.</li>
+<li>حالت خودکار: «Auto ON» در اکسل + «خودکار» در اپ. سیگنال جدید هر ارز با صدا و نوتیفیکیشن اعلام می‌شود.</li>
+</ol>
+<h3 style="color:var(--text)">استراتژی پیش‌فرض: روند (شکست ۴ساعته + ورود ۱۵ دقیقه)</h3>
+<ol>
+<li><b>روند روزانه:</b> خرید فقط وقتی قیمت بالای EMA50 و EMA20 بالای EMA50 است؛ فروش برعکس.</li>
+<li><b>شکست ۴ساعته:</b> کندل ۴ساعته بالای سقف (یا زیر کف) ۴۰ کندل قبل بسته شود.</li>
+<li><b>ورود ۱۵ دقیقه:</b> تا ۶ ساعت بعد، قیمت به سطح شکست برگردد و یک کندل ۱۵م هم‌جهت، آن طرف EMA20 بسته شود.</li>
+<li><b>خروج:</b> حد ضرر ۳×ATR ۴ساعته که با هر کندل ۴ساعته پشت قیمت جابه‌جا می‌شود؛ حد سود ثابت ندارد.</li>
+</ol>
+<p class="mute">این استراتژی در تحقیق روی ۲ سال دیتای ۹ ارز، هم در ۱۸ ماه اول و هم در ۶ ماه آخرِ دیده‌نشده سودده بود. درصد برد آن پایین (حدود ۳۵ تا ۴۵٪) و سودش از چند معامله‌ی بزرگ است؛ ضررهای پشت‌سرهم طبیعی است.</p>
+<h3 style="color:var(--text)">نحوه‌ی خواندن تحلیل</h3>
+<ul>
+<li><b>لیست ارزها</b> بر اساس نزدیکی به موقعیت ورود مرتب است: 🎯 سیگنال، 📌 معامله‌ی باز، ⏳ در ناحیه و منتظر ماشه، نزدیک ناحیه، و منتظر.</li>
+<li><b>نمودار روزانه:</b> نواحی حمایت (سبز)، مقاومت (قرمز) و ناحیه‌ای که قیمت داخل آن است (زرد). ⭐ یعنی ناحیه‌ی مهم. خطوط نارنجی کانال رگرسیونی روزانه هستند.</li>
+<li><b>نمودار ۴ساعته:</b> همان نواحی و کانال روزانه، برای دیدن جایگاه دقیق قیمت.</li>
+<li><b>سناریوها:</b> برای هر جهت مشخص می‌کند قیمت باید به کجا برسد، چه کندلی در ۱۵ دقیقه لازم است، و ورود، حد ضرر و هدف تقریبی چقدر است.</li>
+<li><b>۱۵ دقیقه:</b> اگر قیمت در ناحیه باشد، چک‌لیست ماشه با سطح دقیق شکست و EMA نمایش داده می‌شود؛ در غیر این صورت می‌گوید فعلاً لازم نیست ۱۵ دقیقه را دنبال کنید.</li>
+<li><b>تست روی گذشته:</b> پایین گزارش، با اسلایدر می‌توانید تحلیل را در هر لحظه‌ی گذشته ببینید.</li>
+</ul>
+<p class="amber">این ابزار کمک‌تحلیلی است و توصیه‌ی مالی نیست. نتایج بک‌تست روی ۶ ماه دیتا محدود است.</p>`;
+
+/* ===================== WEEKLY LOW-VOL TAB ===================== */
+S.lv = Object.assign({}, Engine.LV_DEFAULTS, LS.get('scanner.lv', {}));
+const WD = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+function lastPrice(sym) { const o = S.O[sym]; if (o && o.ctx) { const M = o.ctx.M; return M.c[M.n - 1]; } const r = S.data.symbols[sym]['1day']; return r[r.length - 1][4]; }
+function renderLV() {
+  const box = $('#lvBody'); if (!box || !S.data) return;
+  const opt = Object.assign({}, S.lv, { takerFee: S.port.takerFee, fundingPct8h: S.port.fundingPct8h });
+  let bt, now;
+  try { bt = Engine.lowVolBacktest(S.data.symbols, opt); now = Engine.lowVolNow(S.data.symbols, opt); }
+  catch (e) { box.innerHTML = `<div class="card red">${e.message}</div>`; return; }
+  S.lvRes = bt;
+  const cap = S.port.capital, pick = now.pick;
+  const cur = bt.weeks[bt.weeks.length - 1];
+  // live P&L of the current (open) week
+  let wkPnl = 0; const curRows = (cur ? cur.legs : []).map(l => { const px = lastPrice(l.s), r = (px / l.entry - 1) * Math.sign(l.w); wkPnl += Math.abs(l.w) * r; return { ...l, px, r: r * 100 }; });
+  const fmtUsd = x => num((x < 0 ? '-' : '') + '$' + fmtN(Math.abs(x)));
+  const rowsPlan = pick ? Object.entries(pick.w).sort((a, b) => b[1] - a[1]).map(([s, w]) => {
+    const v = pick.vol.find(x => x.s === s).v, px = lastPrice(s), usd = cap * Math.abs(w);
+    return `<tr><td><b>${short(s)}</b></td><td>${dirBadge(w > 0 ? 'LONG' : 'SHORT')}</td><td class="num">${fmtN(v, 0)}%</td><td>${fmtUsd(usd)}</td><td class="num">${fmtP(px)}</td><td class="num">${fmtN(usd / px, 4)}</td></tr>`; }).join('') : '';
+  box.innerHTML = `
+  <div class="card"><h3>📅 استراتژی هفتگی «کم‌نوسان در برابر پرنوسان» — کتاب 151 Trading Strategies، بخش ۳.۳</h3>
+    <p style="margin:0">هر هفته ${S.lv.lvK} ارزِ کم‌نوسان‌تر خرید و ${S.lv.lvK} ارزِ پرنوسان‌تر فروش (فیوچرز، سرمایه‌ی مساوی در دو طرف) و یک هفته نگه‌داری. فقط هفته‌ای یک بار کار دارد.</p></div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>🗓 پیش‌نمایش سبد هفته‌ی بعد — برای سرمایه‌ی ${fmtUsd(cap)} <small class="mute">(بر اساس دیتای امروز؛ قطعی در زمان تعویض)</small></h3>
+      ${pick ? `<table><tr><th>ارز</th><th>جهت</th><th>نوسان سالانه</th><th>حجم پوزیشن</th><th>قیمت فعلی</th><th>مقدار تقریبی</th></tr>${rowsPlan}</table>
+      <p class="mute" style="font-size:12px;margin-top:8px">مجموع حجم = ${fmtN(S.lv.lvGross * 100, 0)}% سرمایه (نصف خرید، نصف فروش). با اهرم ${S.port.leverage}، مارجین لازم حدود ${fmtUsd(cap * S.lv.lvGross / S.port.leverage)} است. حد ضرر جداگانه ندارد؛ ریسک با تنوع و هم‌وزنی کنترل می‌شود.</p>` : '<div class="mute">دیتای کافی نیست</div>'}
+      <p><b>تعویض بعدی سبد:</b> ${fmtT(now.next)} (به وقت تهران) — بعد از بسته شدن کندل روزانه‌ی ${WD[S.lv.lvDay]} (UTC).</p></div>
+    <div class="card"><h3>📊 سبد فعلی (هفته‌ی جاری) از ${cur ? fmtT(cur.t) : '-'} — سود/زیان تا الان: <b class="num ${wkPnl >= 0 ? 'green' : 'red'}">${fmtPct(wkPnl * 100, 2)}</b> (${fmtUsd(wkPnl * cap)})</h3>
+      <table><tr><th>ارز</th><th>جهت</th><th>قیمت ورود</th><th>قیمت فعلی</th><th>بازده</th></tr>
+      ${curRows.map(l => `<tr><td><b>${short(l.s)}</b></td><td>${dirBadge(l.w > 0 ? 'LONG' : 'SHORT')}</td><td class="num">${fmtP(l.entry)}</td><td class="num">${fmtP(l.px)}</td><td class="num ${l.r >= 0 ? 'green' : 'red'}">${fmtPct(l.r, 2)}</td></tr>`).join('')}</table></div>
+  </div>
+  <div class="grid g4" style="margin-top:12px">
+    <div class="card"><h3>بک‌تست: ${fmtUsd(cap)} شد</h3><div class="big num ${bt.ret >= 0 ? 'green' : 'red'}">$${fmtN(cap * (1 + bt.ret / 100))}</div><small class="mute">${fmtPct(bt.ret)} در ${bt.n} هفته</small></div>
+    <div class="card"><h3>هفته‌های سودده</h3><div class="big">${fmtN(bt.win, 0)}%</div></div>
+    <div class="card"><h3>بیشترین افت</h3><div class="big red num">${fmtN(bt.maxDD, 1)}%</div></div>
+    <div class="card"><h3>هزینه‌ها (کارمزد + فاندینگ)</h3><div class="big amber num">${fmtN(bt.costs, 1)}%</div><small class="mute">جمع ساده‌ی هزینه‌ی هفتگی؛ فاندینگ برای هر دو طرف پرداختی فرض شده (محافظه‌کارانه)</small></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>منحنی سرمایه (USDT)</h3><canvas class="eq" id="lvCanvas"></canvas></div>
+    <div class="card"><h3>⚙️ تنظیمات</h3>
+      <div class="set-row"><span>طول محاسبه‌ی نوسان (روز)</span><input type="number" id="lvV" value="${S.lv.lvV}"></div>
+      <div class="set-row"><span>تعداد ارز در هر طرف</span><input type="number" id="lvK" value="${S.lv.lvK}"></div>
+      <div class="set-row" style="grid-template-columns:1fr 160px"><span>روز تعویض سبد (کندل روزانه، UTC)</span><select id="lvDay">${WD.map((d, i) => `<option value="${i}" ${+S.lv.lvDay === i ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
+      <div class="set-row"><span>حجم کل نسبت به سرمایه (۱ = ۱۰۰٪)</span><input type="number" step="0.25" id="lvGross" value="${S.lv.lvGross}"></div>
+      <button id="lvSave" class="primary" style="margin-top:8px">ذخیره و اجرای مجدد</button>
+      <p class="mute" style="font-size:12px">سرمایه، کارمزد و فاندینگ از فرم «شبیه‌سازی سرمایه» در تب بک‌تست خوانده می‌شود.</p></div>
+  </div>
+  <div class="card" style="margin-top:12px"><h3>تاریخچه‌ی هفته‌ها (جدیدترین بالا)</h3><div class="scroll"><table><tr><th>هفته از</th><th>خرید</th><th>فروش</th><th>بازده هفته</th><th>موجودی</th></tr>
+    ${bt.weeks.slice().reverse().map(w => `<tr><td class="num">${fmtT(w.t).split(',')[0]}</td><td>${w.legs.filter(l => l.w > 0).map(l => short(l.s)).join('، ')}</td><td>${w.legs.filter(l => l.w < 0).map(l => short(l.s)).join('، ')}</td>
+      <td class="num ${w.ret >= 0 ? 'green' : 'red'}">${w.done ? fmtPct(w.ret, 2) : 'در جریان'}</td><td>${w.done ? fmtUsd(cap * w.eq) : '-'}</td></tr>`).join('')}</table></div></div>
+  <div class="card amber" style="margin-top:12px;font-size:13px">⚠ این استراتژی عملاً «ارزهای اصلی (BTC، BNB، ETH) در برابر آلت‌کوین‌ها» است و در ۲ سال اخیر کار کرده چون آلت‌کوین‌ها عقب ماندند. در دوره‌ی «آلت‌سیزن» (رشد سریع‌تر آلت‌ها از BTC) ضرر می‌دهد. توصیه‌ی مالی نیست.</div>`;
+  $('#lvSave').onclick = () => { S.lv = { lvV: +$('#lvV').value, lvK: +$('#lvK').value, lvDay: +$('#lvDay').value, lvGross: +$('#lvGross').value }; LS.set('scanner.lv', S.lv); renderLV(); };
+  drawLine(document.getElementById('lvCanvas'), [cap, ...bt.weeks.filter(w => w.done).map(w => cap * w.eq)], '$', cap);
+}
+
+/* ===================== HYPERLIQUID TRADER TRACKER ===================== */
+const HL_INFO = 'https://api.hyperliquid.xyz/info', HL_LB = 'https://stats-data.hyperliquid.xyz/Mainnet/leaderboard';
+const HL = { lb: null, top: [], states: {}, follow: LS.get('hl.follow', []), snap: LS.get('hl.snap', {}), alerts: LS.get('hl.alerts', []), busy: false, timer: null,
+  opt: Object.assign({ minAcct: 100000, maxAcct: 20000000, maxTurn: 30, window: 'month', topN: 25, delayMin: 15, autoMin: 10 }, LS.get('hl.opt', {})) };
+const OUR = () => new Set(S.syms.map(s => s.replace('-USDT', '')));
+const hlPost = async body => { const r = await fetch(HL_INFO, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); };
+const shortAddr = a => a.slice(0, 6) + '…' + a.slice(-4);
+const usd = x => num((x < 0 ? '-' : '') + '$' + (Math.abs(x) >= 1e6 ? fmtN(Math.abs(x) / 1e6, 2) + 'M' : Math.abs(x) >= 1e3 ? fmtN(Math.abs(x) / 1e3, 1) + 'K' : fmtN(Math.abs(x))));
+const perf = (row, w) => { const p = (row.windowPerformances || []).find(x => x[0] === w); return p ? { pnl: +p[1].pnl, roi: +p[1].roi * 100, vlm: +p[1].vlm } : { pnl: 0, roi: 0, vlm: 0 }; };
+function hlMsg(t, cls = 'mute') { const e = $('#hlMsg'); if (e) e.innerHTML = `<span class="${cls}">${t}</span>`; }
+
+function renderHL() {
+  const box = $('#hlBody'); if (!box) return;
+  const o = HL.opt;
+  box.innerHTML = `
+  <div class="card"><h3>👥 دنبال کردن تریدرهای Hyperliquid — همه‌ی پوزیشن‌ها روی بلاکچین عمومی است (فقط خواندنی، بدون نیاز به حساب)</h3>
+    <div class="toolbar">
+      <label>حداقل موجودی حساب $ <input type="number" id="hlMin" value="${o.minAcct}" style="width:110px"></label>
+      <label>حداکثر موجودی $ <input type="number" id="hlMax" value="${o.maxAcct}" style="width:120px"></label>
+      <label title="حجم معاملات ۳۰ روز تقسیم بر موجودی حساب؛ عدد خیلی بالا یعنی بازارساز یا ربات پرتکرار که قابل کپی نیست">حداکثر گردش ماهانه (×موجودی) <input type="number" id="hlTurn" value="${o.maxTurn}" style="width:60px"></label>
+      <label>رتبه‌بندی بر اساس سود <select id="hlWin"><option value="week" ${o.window === 'week' ? 'selected' : ''}>۷ روز</option><option value="month" ${o.window === 'month' ? 'selected' : ''}>۳۰ روز</option><option value="allTime" ${o.window === 'allTime' ? 'selected' : ''}>کل دوره</option></select></label>
+      <label>تعداد <input type="number" id="hlN" value="${o.topN}" style="width:60px"></label>
+      <button id="hlLoad" class="primary">۱) دریافت لیست برترین‌ها</button>
+      <button id="hlPos">۲) بررسی پوزیشن‌های باز</button>
+      <button id="hlAuto">${HL.timer ? '⏱ پایش خودکار: روشن' : '⏱ پایش خودکار: خاموش'}</button>
+      <label>هر <input type="number" id="hlEvery" value="${o.autoMin}" style="width:50px"> دقیقه</label>
+    </div><div id="hlMsg" class="mute" style="font-size:13px"></div></div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>🧭 جمع‌بندی پوزیشن‌ها روی ارزهای شما (تریدرهای انتخاب‌شده)</h3><div id="hlCons"><div class="mute">ابتدا لیست را بگیرید و پوزیشن‌ها را بررسی کنید.</div></div></div>
+    <div class="card"><h3>🔔 تغییرات اخیر (باز/بسته شدن پوزیشن)</h3><div id="hlAlerts" class="scroll" style="max-height:300px">${HL.alerts.length ? HL.alerts.slice(0, 60).map(a => `<div class="alert-item">${a}</div>`).join('') : '<div class="mute">هنوز تغییری ثبت نشده</div>'}</div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><h3>🏆 برترین تریدرها ${HL.lb ? `(از ${HL.lb.length.toLocaleString()} حساب)` : ''} — ⭐ = دنبال‌شده · کلیک روی ردیف = جزئیات و بک‌تست کپی</h3><div id="hlTable"></div></div>
+  <div id="hlDetail"></div>`;
+  $('#hlLoad').onclick = hlLoad; $('#hlPos').onclick = () => hlPositions(false);
+  $('#hlAuto').onclick = hlToggleAuto;
+  ['hlMin', 'hlMax', 'hlTurn', 'hlWin', 'hlN', 'hlEvery'].forEach(id => $('#' + id).onchange = () => { HL.opt = { ...HL.opt, minAcct: +$('#hlMin').value, maxAcct: +$('#hlMax').value, maxTurn: +$('#hlTurn').value, window: $('#hlWin').value, topN: +$('#hlN').value, autoMin: Math.max(2, +$('#hlEvery').value) }; LS.set('hl.opt', HL.opt); if (HL.lb) hlRank(); });
+  hlTable(); hlConsensus();
+}
+async function hlLoad() {
+  hlMsg('در حال دریافت لیست (ممکن است چند ثانیه طول بکشد؛ فایل بزرگی است)…');
+  try { const r = await fetch(HL_LB); if (!r.ok) throw new Error('HTTP ' + r.status); const j = await r.json(); HL.lb = j.leaderboardRows || j; hlRank(); hlMsg(`✅ ${HL.lb.length.toLocaleString()} حساب دریافت شد.`, 'green'); }
+  catch (e) { hlMsg(`❌ اتصال به Hyperliquid برقرار نشد (${e.message}). اینترنت/VPN را بررسی کنید. اگر مرورگر خطای CORS می‌دهد، بگویید تا نسخه‌ی پروکسی بسازم.`, 'red'); }
+}
+function hlRank() {
+  const o = HL.opt;
+  const rows = HL.lb.map(r => ({ addr: (r.ethAddress || '').toLowerCase(), name: r.displayName || '', acct: +r.accountValue, day: perf(r, 'day'), week: perf(r, 'week'), month: perf(r, 'month'), all: perf(r, 'allTime') }))
+    .filter(r => r.addr && r.acct >= o.minAcct && (!o.maxAcct || r.acct <= o.maxAcct) && r.all.pnl > 0 && r.month.pnl > 0 && r.month.vlm > 0 && (!o.maxTurn || r.month.vlm / r.acct <= o.maxTurn));
+  const key = o.window === 'allTime' ? 'all' : o.window;
+  rows.sort((a, b) => b[key].pnl - a[key].pnl);
+  const fol = rows.filter(r => HL.follow.includes(r.addr));
+  HL.top = [...fol, ...rows.filter(r => !HL.follow.includes(r.addr)).slice(0, Math.max(0, o.topN - fol.length))];
+  hlTable();
+}
+function hlTable() {
+  const el = $('#hlTable'); if (!el) return;
+  if (!HL.top.length) { el.innerHTML = '<div class="mute">لیست هنوز دریافت نشده.</div>'; return; }
+  el.innerHTML = `<div class="scroll"><table><tr><th></th><th>آدرس</th><th>موجودی حساب</th><th>سود ۷ روز</th><th>سود ۳۰ روز (ROI)</th><th>سود کل دوره</th><th>حجم ۳۰ روز</th><th>گردش</th><th>پوزیشن‌های باز</th></tr>
+  ${HL.top.map(r => { const st = HL.states[r.addr]; const pos = st ? st.positions.map(p => `<span class="badge ${p.size > 0 ? 'b-long' : 'b-short'}">${p.coin}</span>`).join(' ') || '<span class="mute">ندارد</span>' : '<span class="mute">—</span>';
+    return `<tr class="click" data-a="${r.addr}"><td><span data-f="${r.addr}" style="cursor:pointer">${HL.follow.includes(r.addr) ? '⭐' : '☆'}</span></td><td><span class="addr">${shortAddr(r.addr)}</span> ${r.name ? `<small class="mute">${r.name}</small>` : ''}</td>
+      <td>${usd(r.acct)}</td><td class="${r.week.pnl >= 0 ? 'green' : 'red'}">${usd(r.week.pnl)}</td><td class="green">${usd(r.month.pnl)} <small class="num">(${fmtN(r.month.roi, 0)}%)</small></td><td>${usd(r.all.pnl)}</td><td>${usd(r.month.vlm)}</td><td class="num">${fmtN(r.month.vlm / r.acct, 1)}×</td><td>${pos}</td></tr>`; }).join('')}</table></div>`;
+  el.querySelectorAll('[data-f]').forEach(x => x.onclick = e => { e.stopPropagation(); const a = x.dataset.f; HL.follow = HL.follow.includes(a) ? HL.follow.filter(y => y !== a) : [...HL.follow, a]; LS.set('hl.follow', HL.follow); hlTable(); });
+  el.querySelectorAll('tr[data-a]').forEach(tr => tr.onclick = () => hlDetail(tr.dataset.a));
+}
+function parseState(st) {
+  return { acct: +(st.marginSummary || {}).accountValue || 0, positions: (st.assetPositions || []).map(x => x.position || x).map(p => ({
+    coin: p.coin, size: +p.szi, entry: +p.entryPx, value: +p.positionValue, upnl: +p.unrealizedPnl, roe: +p.returnOnEquity * 100, lev: p.leverage ? +p.leverage.value : null, liq: p.liquidationPx ? +p.liquidationPx : null })).filter(p => p.size !== 0) };
+}
+async function hlPositions(silent) {
+  if (HL.busy) return; if (!HL.top.length) { hlMsg('ابتدا لیست برترین‌ها را دریافت کنید.', 'amber'); return; }
+  HL.busy = true; let done = 0, fail = 0; const changes = [];
+  const list = HL.top.slice();
+  const worker = async () => { while (list.length) { const r = list.shift();
+    try { const st = parseState(await hlPost({ type: 'clearinghouseState', user: r.addr })); HL.states[r.addr] = st; diffSnap(r.addr, st, changes); } catch (e) { fail++; }
+    done++; if (!silent) hlMsg(`بررسی پوزیشن‌ها… ${done}/${HL.top.length}`); await new Promise(z => setTimeout(z, 150)); } };
+  await Promise.all([worker(), worker(), worker()]);
+  HL.busy = false;
+  LS.set('hl.snap', HL.snap);
+  if (changes.length) { HL.alerts = [...changes, ...HL.alerts].slice(0, 200); LS.set('hl.alerts', HL.alerts); if (changes.some(c => c.includes('⭐'))) beep(); }
+  hlMsg(`✅ پوزیشن‌های ${done - fail} تریدر به‌روز شد${fail ? ` (${fail} خطا)` : ''} · ${new Date().toLocaleTimeString('fa-IR')}${changes.length ? ` · ${changes.length} تغییر جدید` : ''}`, 'green');
+  hlTable(); hlConsensus(); const a = $('#hlAlerts'); if (a && HL.alerts.length) a.innerHTML = HL.alerts.slice(0, 60).map(x => `<div class="alert-item">${x}</div>`).join('');
+}
+function diffSnap(addr, st, out) {
+  const prev = HL.snap[addr], cur = {}; for (const p of st.positions) cur[p.coin] = p.size;
+  if (prev) {
+    const tag = (HL.follow.includes(addr) ? '⭐ ' : '') + `<span class="addr">${shortAddr(addr)}</span>`, t = new Date().toLocaleString('fa-IR');
+    for (const c in cur) {
+      const p = st.positions.find(x => x.coin === c);
+      if (!(c in prev)) out.push(`${t} · ${tag} <b>باز کرد</b> ${dirBadge(cur[c] > 0 ? 'LONG' : 'SHORT')} ${c} ${usd(p.value)} در ${num(fmtP(p.entry))}`);
+      else if (Math.sign(prev[c]) !== Math.sign(cur[c])) out.push(`${t} · ${tag} <b>جهت را برگرداند</b> ${c} → ${dirBadge(cur[c] > 0 ? 'LONG' : 'SHORT')}`);
+      else if (Math.abs(cur[c]) > Math.abs(prev[c]) * 1.25) out.push(`${t} · ${tag} حجم ${c} را <b>افزایش داد</b> (${usd(p.value)})`);
+    }
+    for (const c in prev) if (!(c in cur)) out.push(`${t} · ${tag} <b>بست</b> ${c} (${prev[c] > 0 ? 'Long' : 'Short'})`);
+  }
+  HL.snap[addr] = cur;
+}
+function hlConsensus() {
+  const el = $('#hlCons'); if (!el) return;
+  const ours = OUR(), agg = {};
+  let n = 0;
+  for (const r of HL.top) { const st = HL.states[r.addr]; if (!st) continue; n++;
+    for (const p of st.positions) { if (!ours.has(p.coin)) continue; const a = agg[p.coin] || (agg[p.coin] = { L: 0, S: 0, lv: 0, sv: 0, lev: [] });
+      if (p.size > 0) { a.L++; a.lv += p.value; } else { a.S++; a.sv += p.value; } if (p.lev) a.lev.push(p.lev); } }
+  if (!n) { el.innerHTML = '<div class="mute">پوزیشنی بررسی نشده.</div>'; return; }
+  const rows = Object.entries(agg).sort((a, b) => (b[1].lv + b[1].sv) - (a[1].lv + a[1].sv));
+  el.innerHTML = `<div class="mute" style="font-size:12px;margin-bottom:6px">از ${n} تریدر بررسی‌شده</div><table><tr><th>ارز</th><th>Long</th><th>Short</th><th>نسبت حجم دلاری</th><th>برآیند</th><th>اهرم میانه</th></tr>
+  ${rows.map(([c, a]) => { const tot = a.lv + a.sv, lp = tot ? a.lv / tot * 100 : 0, lev = a.lev.sort((x, y) => x - y)[a.lev.length >> 1];
+    const bias = lp >= 65 ? dirBadge('LONG') : lp <= 35 ? dirBadge('SHORT') : '<span class="badge b-range">دوطرفه</span>';
+    return `<tr><td><b>${c}</b></td><td>${a.L} <small class="mute">${usd(a.lv)}</small></td><td>${a.S} <small class="mute">${usd(a.sv)}</small></td>
+      <td><div class="bar"><i style="width:${lp}%;background:#22c55e"></i><i style="width:${100 - lp}%;background:#ef4444"></i></div></td><td>${bias}</td><td>${lev ? lev + 'x' : '-'}</td></tr>`; }).join('') || '<tr><td colspan="6" class="mute">هیچ‌کدام روی ارزهای شما پوزیشن ندارند</td></tr>'}</table>`;
+}
+function hlToggleAuto() {
+  if (HL.timer) { clearInterval(HL.timer); HL.timer = null; }
+  else { hlPositions(true); HL.timer = setInterval(() => hlPositions(true), HL.opt.autoMin * 60000); }
+  const b = $('#hlAuto'); if (b) b.textContent = HL.timer ? '⏱ پایش خودکار: روشن' : '⏱ پایش خودکار: خاموش';
+}
+
+// ---- trader detail + copy-trade backtest ----
+async function fetchFills(addr, days) {
+  let start = Date.now() - days * 86400000, all = [];
+  for (let k = 0; k < 6; k++) {
+    const f = await hlPost({ type: 'userFillsByTime', user: addr, startTime: start, aggregateByTime: true });
+    if (!Array.isArray(f) || !f.length) break;
+    all = all.concat(f); if (f.length < 2000) break;
+    start = Math.max(...f.map(x => x.time)) + 1;
+  }
+  return all.sort((a, b) => a.time - b.time);
+}
+function tradesFromFills(fills) {
+  const pos = {}, open = {}, trades = [];
+  for (const f of fills) {
+    const c = f.coin; if (c.startsWith('@') || c.includes(':')) continue;      // skip spot / HIP-3
+    const sz = +f.sz * (f.side === 'B' ? 1 : -1), start = f.startPosition != null ? +f.startPosition : (pos[c] || 0);
+    let end = start + sz; if (Math.abs(end) < 1e-9 * Math.max(1, Math.abs(start))) end = 0;
+    const fee = +f.fee || 0, cp = +f.closedPnl || 0, px = +f.px;
+    if (start === 0 || Math.sign(start) !== Math.sign(end) && end !== 0) {
+      if (start !== 0 && open[c]) { const o = open[c]; o.exitT = f.time; o.exitPx = px; o.pnl += cp - fee; trades.push(o); }
+      if (end !== 0) open[c] = { coin: c, dir: end > 0 ? 1 : -1, entryT: f.time, entryPx: px, pnl: start === 0 ? -fee : 0, maxSz: Math.abs(end), notional: Math.abs(end) * px };
+      else delete open[c];
+    } else if (open[c]) {
+      const o = open[c]; o.pnl += cp - fee; o.maxSz = Math.max(o.maxSz, Math.abs(end)); o.notional = Math.max(o.notional, Math.abs(end) * px);
+      if (end === 0 || Math.abs(end) < 1e-12) { o.exitT = f.time; o.exitPx = px; trades.push(o); delete open[c]; }
+    }
+    pos[c] = end;
+  }
+  return { trades, open: Object.values(open) };
+}
+function priceAt(sym, tsMs) {           // first 15m close at/after time (our KuCoin data)
+  const o = S.O[sym]; if (!o || !o.ctx) return null; const M = o.ctx.M, t = tsMs / 1000;
+  let lo = 0, hi = M.n - 1, a = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (M.t[m] + 900 >= t) { a = m; hi = m - 1; } else lo = m + 1; }
+  return a < 0 ? null : M.c[a];
+}
+async function hlDetail(addr) {
+  const box = $('#hlDetail'); const r = HL.top.find(x => x.addr === addr) || { addr };
+  box.innerHTML = `<div class="card" style="margin-top:12px"><h3>🔎 <span class="addr">${addr}</span></h3><div class="mute">در حال دریافت پوزیشن‌ها و تاریخچه‌ی ۹۰ روز…</div></div>`;
+  box.scrollIntoView({ behavior: 'smooth' });
+  try {
+    const st = HL.states[addr] || parseState(await hlPost({ type: 'clearinghouseState', user: addr })); HL.states[addr] = st;
+    const fills = await fetchFills(addr, 90);
+    const { trades } = tradesFromFills(fills);
+    const D = +HL.opt.delayMin * 60000, fee = 2 * S.port.takerFee / 100;
+    const ours = OUR();
+    let own = 0, wins = 0, cp = [], days = {};
+    for (const t of trades) { own += t.pnl; if (t.pnl > 0) wins++; const d = new Date(t.exitT).toISOString().slice(0, 10); days[d] = (days[d] || 0) + t.pnl; }
+    for (const t of trades.filter(t => ours.has(t.coin))) {
+      const sym = t.coin + '-USDT', e = priceAt(sym, t.entryT + D), x = priceAt(sym, t.exitT + D);
+      if (e && x) cp.push({ ...t, copyRet: t.dir * (x / e - 1) * 100 - fee * 100, ownRet: t.dir * (t.exitPx / t.entryPx - 1) * 100, e, x });
+    }
+    const cpSum = cp.reduce((a, t) => a + t.copyRet, 0), cpWin = cp.filter(t => t.copyRet > 0).length, ownSum = cp.reduce((a, t) => a + t.ownRet, 0);
+    const dvals = Object.values(days), posDays = dvals.filter(x => x > 0).length;
+    const hold = trades.length ? trades.reduce((a, t) => a + (t.exitT - t.entryT), 0) / trades.length / 3600000 : 0;
+    const verdict = cp.length < 10 ? '<span class="amber">نمونه‌ی کم روی ارزهای شما — قضاوت قابل اتکا نیست</span>'
+      : cpSum > 0 && cpWin / cp.length >= 0.45 ? '<b class="green">کپی با تأخیر هم سودده بوده</b>' : '<b class="red">کپی با تأخیر سودده نبوده — دنبال کردن توصیه نمی‌شود</b>';
+    box.innerHTML = `<div class="card" style="margin-top:12px"><h3>🔎 <span class="addr">${addr}</span> ${r.name ? '· ' + r.name : ''}</h3>
+      <div class="grid g4">
+        <div class="card"><h3>موجودی حساب</h3><div class="big">${usd(st.acct)}</div></div>
+        <div class="card"><h3>سود تحقق‌یافته ۹۰ روز (خود تریدر)</h3><div class="big ${own >= 0 ? 'green' : 'red'}">${usd(own)}</div><small class="mute">${trades.length} معامله · برد ${trades.length ? fmtN(wins / trades.length * 100, 0) : 0}% · روزهای سودده ${dvals.length ? fmtN(posDays / dvals.length * 100, 0) : 0}%</small></div>
+        <div class="card"><h3>مدت میانگین معامله</h3><div class="big">${hold < 48 ? fmtN(hold, 1) + ' ساعت' : fmtN(hold / 24, 1) + ' روز'}</div><small class="mute">${hold < 2 ? 'اسکالپر — کپی دستی عملاً ممکن نیست' : ''}</small></div>
+        <div class="card"><h3>بک‌تست کپی با ${HL.opt.delayMin} دقیقه تأخیر</h3><div class="big num ${cpSum >= 0 ? 'green' : 'red'}">${fmtPct(cpSum)}</div><small class="mute">جمع بازده ${cp.length} معامله روی ارزهای شما (بعد از کارمزد) · برد ${cp.length ? fmtN(cpWin / cp.length * 100, 0) : 0}% · بازده خود تریدر روی همین‌ها ${fmtPct(ownSum)}</small></div>
+      </div>
+      <p>نتیجه: ${verdict}. <span class="mute" style="font-size:12px">ورود و خروج کپی با قیمت بسته‌شدن ۱۵ دقیقه‌ی KuCoin بعد از تأخیر حساب شده؛ تأخیر را می‌توانید عوض کنید:</span>
+        <input type="number" id="hlDelay" value="${HL.opt.delayMin}" style="width:60px"> دقیقه <button id="hlRe">محاسبه‌ی مجدد</button>
+        <button id="hlFol">${HL.follow.includes(addr) ? '⭐ دنبال‌شده (حذف)' : '☆ دنبال کن'}</button></p>
+      <div class="grid g2"><div><h3>پوزیشن‌های باز</h3><table><tr><th>ارز</th><th>جهت</th><th>حجم</th><th>ورود</th><th>اهرم</th><th>سود/زیان</th><th>لیکوئید</th></tr>
+        ${st.positions.map(p => `<tr><td><b>${p.coin}</b></td><td>${dirBadge(p.size > 0 ? 'LONG' : 'SHORT')}</td><td>${usd(p.value)}</td><td class="num">${fmtP(p.entry)}</td><td>${p.lev ? p.lev + 'x' : '-'}</td><td class="${p.upnl >= 0 ? 'green' : 'red'}">${usd(p.upnl)}</td><td class="num">${p.liq ? fmtP(p.liq) : '-'}</td></tr>`).join('') || '<tr><td colspan="7" class="mute">پوزیشن باز ندارد</td></tr>'}</table></div>
+      <div><h3>معاملات اخیر روی ارزهای شما (کپی)</h3><div class="scroll" style="max-height:300px"><table><tr><th>ارز</th><th>جهت</th><th>ورود</th><th>خروج</th><th>تریدر</th><th>کپی</th></tr>
+        ${cp.slice().reverse().slice(0, 40).map(t => `<tr><td>${t.coin}</td><td>${dirBadge(t.dir > 0 ? 'LONG' : 'SHORT')}</td><td class="num">${fmtT(t.entryT / 1000)}</td><td class="num">${fmtT(t.exitT / 1000)}</td><td class="num ${t.ownRet >= 0 ? 'green' : 'red'}">${fmtPct(t.ownRet, 2)}</td><td class="num ${t.copyRet >= 0 ? 'green' : 'red'}">${fmtPct(t.copyRet, 2)}</td></tr>`).join('') || '<tr><td colspan="6" class="mute">معامله‌ای روی ارزهای شما نداشته</td></tr>'}</table></div></div></div></div>`;
+    $('#hlRe').onclick = () => { HL.opt.delayMin = +$('#hlDelay').value; LS.set('hl.opt', HL.opt); hlDetail(addr); };
+    $('#hlFol').onclick = () => { HL.follow = HL.follow.includes(addr) ? HL.follow.filter(y => y !== addr) : [...HL.follow, addr]; LS.set('hl.follow', HL.follow); hlDetail(addr); hlTable(); };
+  } catch (e) { box.innerHTML = `<div class="card red" style="margin-top:12px">خطا در دریافت اطلاعات: ${e.message}</div>`; }
+}
+renderHL();
+
+/* ---------------- init ---------------- */
+renderSettings();
+loadScript();
+if (LS.get('scanner.auto', false)) $('#btnAuto').click();
+})();
+
+</script>
+</body>
+</html>
