@@ -58,7 +58,24 @@ const HL_INFO = 'https://api.hyperliquid.xyz/info', HL_LB = 'https://stats-data.
 const HL = { lb: null, top: [], states: {}, follow: LS.get('hl.follow', []), snap: LS.get('hl.snap', {}), alerts: LS.get('hl.alerts', []), busy: false, timer: null,
   opt: Object.assign({ minAcct: 100000, maxAcct: 20000000, maxTurn: 30, window: 'month', topN: 25, delayMin: 15, autoMin: 10 }, LS.get('hl.opt', {})) };
 const OUR = () => new Set(S.syms.map(s => s.replace('-USDT', '')));
-const hlPost = async body => { const r = await fetch(HL_INFO, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); };
+// POST to Hyperliquid. Mode 'simple' sends text/plain (no CORS preflight) — works from file:// pages in Firefox/Chrome.
+let HL_MODE = LS.get('hl.mode', 'simple'), HL_LASTERR = '';
+async function hlPostMode(body, mode) {
+  const init = mode === 'json' ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+                               : { method: 'POST', body: JSON.stringify(body) };
+  const r = await fetch(HL_INFO, init);
+  const txt = await r.text();
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + txt.slice(0, 120));
+  try { return JSON.parse(txt); } catch (e) { throw new Error('پاسخ نامعتبر: ' + txt.slice(0, 120)); }
+}
+const hlPost = async body => {
+  try { return await hlPostMode(body, HL_MODE); }
+  catch (e1) {
+    const other = HL_MODE === 'json' ? 'simple' : 'json';
+    try { const r = await hlPostMode(body, other); HL_MODE = other; LS.set('hl.mode', other); return r; }
+    catch (e2) { HL_LASTERR = `${HL_MODE}: ${e1.message} | ${other}: ${e2.message}`; throw e2; }
+  }
+};
 const shortAddr = a => a.slice(0, 6) + '…' + a.slice(-4);
 const usd = x => num((x < 0 ? '-' : '') + '$' + (Math.abs(x) >= 1e6 ? fmtN(Math.abs(x) / 1e6, 2) + 'M' : Math.abs(x) >= 1e3 ? fmtN(Math.abs(x) / 1e3, 1) + 'K' : fmtN(Math.abs(x))));
 const perf = (row, w) => { const p = (row.windowPerformances || []).find(x => x[0] === w); return p ? { pnl: +p[1].pnl, roi: +p[1].roi * 100, vlm: +p[1].vlm } : { pnl: 0, roi: 0, vlm: 0 }; };
@@ -125,14 +142,14 @@ async function hlPositions(silent) {
   HL.busy = true; let done = 0, fail = 0; const changes = [];
   const list = HL.top.slice();
   const worker = async () => { while (list.length) { const r = list.shift();
-    try { const st = parseState(await hlPost({ type: 'clearinghouseState', user: r.addr })); HL.states[r.addr] = st; diffSnap(r.addr, st, changes); } catch (e) { fail++; }
+    try { const st = parseState(await hlPost({ type: 'clearinghouseState', user: r.addr })); HL.states[r.addr] = st; diffSnap(r.addr, st, changes); } catch (e) { fail++; HL_LASTERR = HL_LASTERR || e.message; }
     done++; if (!silent) hlMsg(`بررسی پوزیشن‌ها… ${done}/${HL.top.length}`); await new Promise(z => setTimeout(z, 150)); } };
   await Promise.all([worker(), worker(), worker()]);
   HL.busy = false;
   LS.set('hl.snap', HL.snap);
   if (changes.length) { HL.alerts = [...changes, ...HL.alerts].slice(0, 200); LS.set('hl.alerts', HL.alerts); if (changes.some(c => c.includes('⭐'))) beep(); }
-  hlMsg(`✅ پوزیشن‌های ${done - fail} تریدر به‌روز شد${fail ? ` (${fail} خطا)` : ''} · ${new Date().toLocaleTimeString('fa-IR')}${changes.length ? ` · ${changes.length} تغییر جدید` : ''}`, 'green');
-  hlTable(); hlConsensus(); const a = $('#hlAlerts'); if (a && HL.alerts.length) a.innerHTML = HL.alerts.slice(0, 60).map(x => `<div class="alert-item">${x}</div>`).join('');
+  hlMsg(`${fail === done ? '❌' : '✅'} پوزیشن‌های ${done - fail} تریدر به‌روز شد${fail ? ` (${fail} خطا — جزئیات: ${HL_LASTERR || '?'})` : ''} · ${new Date().toLocaleTimeString('fa-IR')}${changes.length ? ` · ${changes.length} تغییر جدید` : ''}`, 'green');
+  hlTable(); hlConsensus(); if (typeof rescan === 'function') rescan(); const a = $('#hlAlerts'); if (a && HL.alerts.length) a.innerHTML = HL.alerts.slice(0, 60).map(x => `<div class="alert-item">${x}</div>`).join('');
 }
 function diffSnap(addr, st, out) {
   const prev = HL.snap[addr], cur = {}; for (const p of st.positions) cur[p.coin] = p.size;

@@ -63,7 +63,7 @@ span.num,b.num{display:inline-block}
 .scen.off{opacity:.6}
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
 .kv div{background:var(--panel2);border-radius:8px;padding:6px 8px}
-.kv span{display:block;color:var(--mute);font-size:12px}
+.kv > div > span:first-child{display:block;color:var(--mute);font-size:12px}
 .chk{list-style:none;padding:0;margin:6px 0}
 .chk li{padding:3px 0}
 .signal{border:2px solid var(--green);background:linear-gradient(135deg,#0f2a1a,#121a2e)}
@@ -86,7 +86,7 @@ details summary{cursor:pointer;color:var(--mute)}
 </head>
 <body>
 <header>
-  <h1>اسکنر و تحلیل چندتایم‌فریمی <small class="mute" style="font-size:11px">v2.0</small></h1>
+  <h1>اسکنر موقعیت‌های ورود <small class="mute" style="font-size:11px">v5.0</small></h1>
   <span id="dataPill" class="pill">دیتا بارگذاری نشده</span>
   <span id="srcPill" class="pill" style="display:none"></span>
   <div class="spacer"></div>
@@ -95,16 +95,21 @@ details summary{cursor:pointer;color:var(--mute)}
   <label class="pill" style="cursor:pointer">📂 فایل دستی<input id="fileIn" type="file" accept=".js,.json" hidden></label>
 </header>
 <nav>
-  <button data-tab="ana" class="act">تحلیل</button>
-  <button data-tab="lv">هفتگی (کم‌نوسان)</button>
-  <button data-tab="hl">تریدرها (Hyperliquid)</button>
-  <button data-tab="chart">نمودار تعاملی</button>
-  <button data-tab="bt">بک‌تست</button>
-  <button data-tab="set">تنظیمات</button>
-  <button data-tab="help">راهنما</button>
+  <button data-tab="opp" class="act">🎯 موقعیت‌ها</button>
+  <button data-tab="jr">📒 دفترچه</button>
+  <button id="advBtn" style="margin-right:auto">پیشرفته ▾</button>
+  <button class="adv" data-tab="ana">تحلیل ۹ ارز</button>
+  <button class="adv" data-tab="lv">هفتگی (کم‌نوسان)</button>
+  <button class="adv" data-tab="hl">تریدرها (Hyperliquid)</button>
+  <button class="adv" data-tab="chart">نمودار تعاملی</button>
+  <button class="adv" data-tab="bt">بک‌تست</button>
+  <button class="adv" data-tab="set">تنظیمات</button>
+  <button class="adv" data-tab="help">راهنما</button>
 </nav>
 <main>
-  <section id="tab-ana" class="tab act">
+  <section id="tab-opp" class="tab act"><div id="oppBody"><div class="empty">در حال بارگذاری ScannerScan.js …</div></div></section>
+  <section id="tab-jr" class="tab"><div id="jrBody"></div></section>
+  <section id="tab-ana" class="tab">
     <div class="layout">
       <aside class="card wl" id="watchlist"><div class="empty">بدون دیتا</div></aside>
       <div id="report" class="report"><div class="empty">فایل ScannerData.js را کنار این فایل قرار دهید یا با «فایل دستی» بارگذاری کنید.</div></div>
@@ -148,6 +153,9 @@ details summary{cursor:pointer;color:var(--mute)}
 </main>
 <script>
 /*__ENGINE__*/
+</script>
+<script>
+/*__SCAN__*/
 </script>
 <script>
 /*__UI__*/

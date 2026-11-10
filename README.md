@@ -1,4 +1,6 @@
-# اسکنر و تحلیل ارز دیجیتال (Crypto Scanner)
+# اسکنر موقعیت‌های ورود ارز دیجیتال (Crypto Scanner)
+
+**نسخه ۶:** تحلیل از بالا به پایین روی ۱۰۰ ارز پرحجم KuCoin: روند هفتگی ← روزانه ← جایگاه در کانال هفتگی ← موقعیت ۴ساعته نسبت به سطوح روزانه/هفتگی ← ماشه‌ی ۱۵ دقیقه ← چک‌لیست تأییدیه‌ها (حجم، RSI، پرایس‌اکشن، فضای حرکت، BTC، تریدرهای برتر) با امتیاز «X از N». دیتابیس اکسل: روزانه و ۴ساعته ۲ ساله با Backfill تدریجی، ۱۵ دقیقه‌ی چرخشی ۱۰ روزه. + دفترچه‌ی معاملات و واچ‌لیست تریدرهای Hyperliquid.
 
 ابزار تحلیل چندتایم‌فریمی ارز دیجیتال: دیتابیس اکسل (VBA، KuCoin) + اپ HTML آفلاین.
 
@@ -6,14 +8,15 @@
 | مسیر | توضیح |
 |---|---|
 | `excel/modScannerDB.bas` | ماژول VBA دیتابیس: دانلود 1day/4hour/15min از KuCoin، آپدیت خودکار هر ۱۵ دقیقه، Backfill تدریجی تا ۲ سال، خروجی `ScannerData.js` |
+| `ScannerScan.js` | خروجی دیتابیس برای صفحه‌ی موقعیت‌ها (همه‌ی ارزها؛ با هر Update/Auto ساخته می‌شود) |
 | `app/ScannerApp.html` | اپ نهایی (یک فایل). کنار فایل اکسل و `ScannerData.js` بگذارید و در مرورگر باز کنید |
-| `app/src/` | سورس اپ: `engine.js` (استراتژی‌ها، بک‌تست، مدیریت سرمایه)، `ui.js`، `ui_ext.js` (هفتگی + Hyperliquid)، `template.html` — ساخت با `python app/build.py` |
+| `app/src/` | سورس اپ: `scan.js` (اسکنر ۱۰۰ ارز)، `engine.js` (استراتژی‌ها، بک‌تست، مدیریت سرمایه)، `ui.js`، `ui_ext.js` (هفتگی + Hyperliquid)، `ui_scan.js` (موقعیت‌ها + دفترچه)، `template.html` — ساخت با `python app/build.py` |
 | `research/` | اسکریپت‌های تحقیق (Node.js): مقایسه‌ی استراتژی‌ها با تفکیک ۱۸ ماه ساخت / ۶ ماه تست، تست Look-ahead |
 
 ## راه‌اندازی
 1. فایل اکسل `.xlsm` بسازید، `modScannerDB.bas` را Import کنید، ماکروی `SC_Setup` را اجرا کنید.
 2. در VBA: Tools → Options → General → Error Trapping = **Break on Unhandled Errors**.
-3. `Add Symbols` ← `Update + Export` ← (اختیاری) `Set History Days` = 730 و `Backfill History`.
+3. **Sync Top 100** ← **Update + Export** ← **Auto ON** (Backfill تاریخچه را به‌تدریج تا ۲ سال کامل می‌کند). اختیاری برای بخش پیشرفته: `Add Symbols` ← `Update + Export` ← (اختیاری) `Set History Days` = 730 و `Backfill History`.
 4. `ScannerApp.html` را کنار فایل اکسل بگذارید و باز کنید.
 
 ## استراتژی‌ها (نتایج بک‌تست، ۱۰۰ USDT، فیوچرز، با کارمزد و فاندینگ)

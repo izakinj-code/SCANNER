@@ -1,6 +1,6 @@
 Attribute VB_Name = "modScannerDB"
 '=====================================================================
-' SCANNER DATABASE  v1.3   (KuCoin Spot)
+' SCANNER DATABASE  v1.5   (KuCoin Spot)
 '---------------------------------------------------------------------
 ' Timeframes : 1day / 4hour / 15min
 ' Sheets     : SC_Config  (settings + control panel)
@@ -47,6 +47,13 @@ Private Const P_NEXT As String = "N4"
 Private Const P_LASTRUN As String = "N5"
 Private Const P_EXPORT As String = "N6"
 Private Const P_BUDGET As String = "N7"
+Private Const P_SCAN As String = "N17"
+Private Const SCAN_FILE As String = "ScannerScan.js"
+Private Const ROLL_DAYS As Long = 30          '15min rows with HistoryDays <= this are rolling (old rows trimmed)
+Private Const SCAN_TOP As Long = 100
+Private Const SCAN_MINVOL As Double = 1000000   'min 24h volume (USDT)
+Private Const SCAN_D As Long = 500           'daily candles per coin
+Private Const SCAN_H As Long = 1500          '4H candles per coin (~250 days)
 Private Const INITIAL_DAYS As Long = 180     'FULL build downloads at most this; Backfill adds the rest
 
 Private mNextRun As Date
@@ -117,6 +124,8 @@ Private Sub CreateButtons(ws As Worksheet)
     AddButton ws, "scb_add", "Add Symbols", "SC_AddSymbols", 13, RGB(217, 119, 6)
     AddButton ws, "scb_bf", "Backfill History", "SC_Backfill", 14, RGB(13, 148, 136)
     AddButton ws, "scb_days", "Set History Days", "SC_SetHistoryDays", 15, RGB(100, 116, 139)
+    AddButton ws, "scb_scan", "Sync Top 100", "SC_SyncTop100", 16, RGB(190, 24, 93)
+    ws.Range("M17").Value = "Last scan"
 End Sub
 
 Private Sub AddButton(ws As Worksheet, nm As String, caption As String, _
@@ -231,7 +240,7 @@ Private Function BackfillAll(ws As Worksheet, silent As Boolean) As Long
                And LCase$(Trim$(CStr(ws.Cells(r, C_TF).Value))) = tfOrder(pass) _
                And UCase$(Trim$(CStr(ws.Cells(r, C_MODE).Value))) = "UPDATE" Then
                 used = used + BackfillRow(ws, r, budget - used)
-                If Not silent And ThisWorkbook.Path <> "" Then ThisWorkbook.Save
+                If Not silent And ThisWorkbook.Path <> "" And (r Mod 25 = 0) Then ThisWorkbook.Save
             End If
         Next r
     Next pass
@@ -344,6 +353,123 @@ Public Sub SC_SetHistoryDays()
            "Now press 'Backfill History' (repeat until complete) or keep Auto ON.", vbInformation
 End Sub
 
+'=====================================================================
+' TOP-100 : helpers used by SC_SyncTop100 (coins are stored in the DB;
+'           ScannerScan.js is exported from the DB by ExportForApp)
+'=====================================================================
+Public Sub SC_SyncTop100()
+    'adds the 100 most liquid KuCoin USDT pairs to SC_Config (existing rows are never touched)
+    '  1day + 4hour : HistoryDays 730 (first 180 days now, the rest via Backfill)
+    '  15min        : HistoryDays 10, rolling (older rows trimmed automatically)
+    Dim ws As Worksheet, vols As Object, syms As Collection, i As Long, j As Long, r As Long, added As Long, sym As String
+    Dim tfs As Variant, days As Variant
+    On Error GoTo Fail
+    Set ws = ThisWorkbook.Worksheets(CFG_SHEET)
+    Set vols = CreateObject("Scripting.Dictionary")
+    Application.StatusBar = "Sync: reading KuCoin tickers ..."
+    Set syms = TopSymbols(SCAN_TOP, vols)
+    tfs = Array("1day", "4hour", "15min"): days = Array(730, 730, 10)
+    For i = 1 To syms.Count
+        sym = syms(i)
+        For j = 0 To 2
+            If Not ConfigRowExists(ws, sym, CStr(tfs(j))) Then
+                r = ws.Cells(ws.Rows.Count, C_SYMBOL).End(xlUp).Row + 1
+                AddConfigRow ws, r, sym, CStr(tfs(j))
+                ws.Cells(r, C_DAYS).Value = days(j)
+                added = added + 1
+            End If
+        Next j
+    Next i
+    Application.StatusBar = False
+    MsgBox syms.Count & " coins checked, " & added & " new rows added (Mode = FULL)." & vbCrLf & vbCrLf & _
+           "Next: press 'Update + Export' (first time ~5-10 min)," & vbCrLf & _
+           "then keep Auto ON - Backfill completes 2-year history gradually.", vbInformation
+    Exit Sub
+Fail:
+    Application.StatusBar = False
+    MsgBox "Sync error: " & Err.Description, vbExclamation
+End Sub
+
+'top-N USDT pairs by 24h quote volume (stablecoins, gold, leveraged tokens excluded)
+Private Function TopSymbols(topN As Long, vols As Object) As Collection
+    Dim txt As String, chunks() As String, i As Long, k As Long, sym As String, base As String, v As Double
+    Dim names() As String, vals() As Double, n As Long, best As Long, out As New Collection
+    Const EXCL As String = "|USDC|USDT|DAI|TUSD|FDUSD|USDD|PYUSD|USDE|USDP|BUSD|EUR|EURT|EURC|EURI|GBP|AEUR|XAUT|PAXG|USD1|RLUSD|USDS|USDG|USDQ|USDR|"
+
+    txt = HttpGet("https://api.kucoin.com/api/v1/market/allTickers")
+    chunks = Split(txt, "{""symbol"":""")
+    ReDim names(1 To UBound(chunks) + 1): ReDim vals(1 To UBound(chunks) + 1)
+    For i = 1 To UBound(chunks)
+        sym = Left$(chunks(i), InStr(1, chunks(i), """") - 1)
+        If Right$(sym, 5) = "-USDT" Then
+            base = Left$(sym, Len(sym) - 5)
+            If InStr(1, EXCL, "|" & base & "|") = 0 And Not (Right$(base, 2) Like "#[LS]") Then
+                v = Val(JsonVal(chunks(i), "volValue"))
+                If v >= SCAN_MINVOL Then n = n + 1: names(n) = sym: vals(n) = v
+            End If
+        End If
+    Next i
+    For k = 1 To IIf(topN < n, topN, n)                 'partial selection sort (descending)
+        best = k
+        For i = k + 1 To n
+            If vals(i) > vals(best) Then best = i
+        Next i
+        If best <> k Then
+            v = vals(k): vals(k) = vals(best): vals(best) = v
+            sym = names(k): names(k) = names(best): names(best) = sym
+        End If
+        out.Add names(k)
+        vols(names(k)) = vals(k)
+    Next k
+    If out.Count = 0 Then Err.Raise vbObjectError + 701, , "allTickers returned no USDT pairs"
+    Set TopSymbols = out
+End Function
+
+Private Function JsonVal(chunk As String, key As String) As String
+    Dim p As Long, q As Long
+    p = InStr(1, chunk, """" & key & """:")
+    If p = 0 Then Exit Function
+    p = p + Len(key) + 3
+    If Mid$(chunk, p, 1) = """" Then
+        q = InStr(p + 1, chunk, """")
+        JsonVal = Mid$(chunk, p + 1, q - p - 1)
+    Else
+        q = p
+        Do While q <= Len(chunk) And InStr(1, ",}", Mid$(chunk, q, 1)) = 0
+            q = q + 1
+        Loop
+        JsonVal = Mid$(chunk, p, q - p)
+    End If
+End Function
+
+'one request: last nBars candles (KuCoin max 1500 per request)
+Private Sub FetchLast(sym As String, tf As String, stepSec As Long, nBars As Long, nowTs As Double, d As Object)
+    Dim fromTs As Double
+    fromTs = Int((nowTs - CDbl(nBars) * stepSec) / stepSec) * stepSec
+    ParseKucoin HttpGet(API_URL & "?type=" & tf & "&symbol=" & sym & "&startAt=" & Format$(fromTs, "0") & "&endAt=" & Format$(nowTs, "0")), d
+End Sub
+
+'closed candles only, ascending: [[ts,o,h,l,c,v,q],...]
+Private Function RowsJson(d As Object, stepSec As Long, nowTs As Double) As String
+    Dim keys() As Double, k As Variant, n As Long, i As Long, m As Long, rows() As String, v As Variant
+    If d.Count = 0 Then RowsJson = "[]": Exit Function
+    ReDim keys(0 To d.Count - 1)
+    For Each k In d.keys
+        keys(n) = CDbl(k): n = n + 1
+    Next k
+    QuickSort keys, 0, n - 1
+    ReDim rows(1 To n)
+    For i = 0 To n - 1
+        If keys(i) + stepSec <= nowTs Then
+            v = d(keys(i)): m = m + 1
+            rows(m) = "[" & Num(keys(i)) & "," & Num(v(0)) & "," & Num(v(1)) & "," & Num(v(2)) & "," & Num(v(3)) & "," & Num(v(4)) & "," & Num(v(5)) & "]"
+        End If
+    Next i
+    If m = 0 Then RowsJson = "[]": Exit Function
+    ReDim Preserve rows(1 To m)
+    RowsJson = "[" & Join(rows, ",") & "]"
+End Function
+
 Public Sub SC_Export()
     Dim p As String
     p = ExportForApp()
@@ -379,7 +505,7 @@ Private Sub RunAll(forceFull As Boolean, silent As Boolean, Optional doBackfill 
                 Case "UPDATE": nUpd = nUpd + 1
                 Case "ERROR": nErr = nErr + 1
             End Select
-            If Not silent And ThisWorkbook.Path <> "" Then ThisWorkbook.Save   'keep progress
+            If Not silent And ThisWorkbook.Path <> "" And (r Mod 25 = 0) Then ThisWorkbook.Save   'keep progress
 
         End If
     Next r
@@ -402,6 +528,22 @@ Private Sub RunAll(forceFull As Boolean, silent As Boolean, Optional doBackfill 
 End Sub
 
 
+Private Sub TrimRolling(wsCfg As Worksheet, r As Long)
+    Dim days As Long, ws As Worksheet, lastRow As Long, a As Variant, keepTs As Double, k As Long
+    If LCase$(Trim$(CStr(wsCfg.Cells(r, C_TF).Value))) <> "15min" Then Exit Sub
+    days = CLng(Val(wsCfg.Cells(r, C_DAYS).Value))
+    If days <= 0 Or days > ROLL_DAYS Then Exit Sub
+    Set ws = ThisWorkbook.Worksheets(Trim$(CStr(wsCfg.Cells(r, C_SHEET).Value)))
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    If lastRow < 3 Then Exit Sub
+    keepTs = NowUtcTs() - CDbl(days) * 86400#
+    a = ws.Range("A2:A" & lastRow).Value
+    For k = 1 To UBound(a, 1)
+        If a(k, 1) >= keepTs Then Exit For
+    Next k
+    If k > 1 + 96 Then ws.Rows("2:" & k).Delete       'trim in chunks of at least one day
+End Sub
+
 'returns "FULL" / "UPDATE" / "SKIP" / "ERROR"
 Private Function ProcessRow(ws As Worksheet, r As Long, mode As String) As String
     Dim added As Long
@@ -413,6 +555,7 @@ Private Function ProcessRow(ws As Worksheet, r As Long, mode As String) As Strin
             ws.Cells(r, C_MODE).Value = "UPDATE"
         Case "UPDATE"
             added = UpdateSheet(ws, r)
+            TrimRolling ws, r
         Case Else
             ws.Cells(r, C_STATUS).Value = "SKIP (Mode must be FULL or UPDATE)"
             ProcessRow = "SKIP"
@@ -705,18 +848,37 @@ End Sub
 ' EXPORT FOR APP  ->  ScannerData.js   (window.SCANNER_DATA = {...})
 '=====================================================================
 Private Function ExportForApp() As String
-    Dim wsCfg As Worksheet, ws As Worksheet, lastRow As Long, r As Long
-    Dim sym As String, tf As String, sh As String, a As Variant, i As Long, n As Long
-    Dim syms As Object, tfs As Object, rowsTxt() As String, k As Variant, k2 As Variant
-    Dim parts As String, symPart As String, path As String, f As Integer
-
+    'core coins (with long 15m history)  -> ScannerData.js  (full history, advanced tabs)
+    'all active coins                     -> ScannerScan.js  (1day all, 4hour last 1500, 15min last 960)
     If ThisWorkbook.Path = "" Then
         MsgBox "Save the workbook first (export file goes next to it).", vbExclamation
         Exit Function
     End If
+    Application.StatusBar = "Scanner DB: exporting ..."
+    ExportForApp = ExportFile(EXPORT_FILE, "SCANNER_DATA", True)
+    ExportFile SCAN_FILE, "SCANNER_SCAN", False
+    Application.StatusBar = False
+End Function
+
+Private Function IsCoreSymbol(wsCfg As Worksheet, sym As String) As Boolean
+    Dim r As Long, lastRow As Long
+    lastRow = wsCfg.Cells(wsCfg.Rows.Count, C_SYMBOL).End(xlUp).Row
+    For r = 2 To lastRow
+        If UCase$(Trim$(CStr(wsCfg.Cells(r, C_SYMBOL).Value))) = sym And LCase$(Trim$(CStr(wsCfg.Cells(r, C_TF).Value))) = "15min" _
+           And UCase$(Trim$(CStr(wsCfg.Cells(r, C_ACTIVE).Value))) = "YES" And Val(wsCfg.Cells(r, C_DAYS).Value) > ROLL_DAYS Then
+            IsCoreSymbol = True: Exit Function
+        End If
+    Next r
+End Function
+
+Private Function ExportFile(fileName As String, varName As String, coreOnly As Boolean) As String
+    Dim wsCfg As Worksheet, ws As Worksheet, lastRow As Long, r As Long, sym As String, tf As String, sh As String
+    Dim a As Variant, i As Long, n As Long, first As Long, maxRows As Long, syms As Object, tfs As Object, core As Object
+    Dim rowsTxt() As String, k As Variant, k2 As Variant, parts() As String, np As Long, symPart As String, path As String, f As Integer
 
     Set wsCfg = ThisWorkbook.Worksheets(CFG_SHEET)
     Set syms = CreateObject("Scripting.Dictionary")
+    Set core = CreateObject("Scripting.Dictionary")
     lastRow = wsCfg.Cells(wsCfg.Rows.Count, C_SYMBOL).End(xlUp).Row
 
     For r = 2 To lastRow
@@ -724,16 +886,23 @@ Private Function ExportForApp() As String
             sym = UCase$(Trim$(CStr(wsCfg.Cells(r, C_SYMBOL).Value)))
             tf = LCase$(Trim$(CStr(wsCfg.Cells(r, C_TF).Value)))
             sh = Trim$(CStr(wsCfg.Cells(r, C_SHEET).Value))
-            If SheetExists(sh) Then
+            If Not core.Exists(sym) Then core(sym) = IsCoreSymbol(wsCfg, sym)
+            If (Not coreOnly Or core(sym)) And SheetExists(sh) Then
+                maxRows = 0
+                If Not coreOnly Then
+                    If tf = "4hour" Then maxRows = 1500
+                    If tf = "15min" Then maxRows = 960
+                End If
                 Set ws = ThisWorkbook.Worksheets(sh)
                 n = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row - 1
                 If n >= 2 Then
-                    a = ws.Range("A2:G" & n + 1).Value
-                    ReDim rowsTxt(1 To n)
-                    For i = 1 To n
+                    first = 1
+                    If maxRows > 0 And n > maxRows Then first = n - maxRows + 1
+                    a = ws.Range("A" & (first + 1) & ":G" & (n + 1)).Value
+                    ReDim rowsTxt(1 To n - first + 1)
+                    For i = 1 To n - first + 1
                         rowsTxt(i) = "[" & Num(a(i, 1)) & "," & Num(a(i, 2)) & "," & Num(a(i, 3)) & "," & _
-                                     Num(a(i, 4)) & "," & Num(a(i, 5)) & "," & Num(a(i, 6)) & "," & _
-                                     Num(a(i, 7)) & "]"
+                                     Num(a(i, 4)) & "," & Num(a(i, 5)) & "," & Num(a(i, 6)) & "," & Num(a(i, 7)) & "]"
                     Next i
                     If Not syms.Exists(sym) Then syms.Add sym, CreateObject("Scripting.Dictionary")
                     Set tfs = syms(sym)
@@ -742,24 +911,26 @@ Private Function ExportForApp() As String
             End If
         End If
     Next r
+    If syms.Count = 0 Then Exit Function
 
+    ReDim parts(1 To syms.Count)
     For Each k In syms.keys
         symPart = ""
         For Each k2 In syms(k).keys
             symPart = symPart & IIf(symPart = "", "", ",") & syms(k)(k2)
         Next k2
-        parts = parts & IIf(parts = "", "", ",") & """" & k & """:{" & symPart & "}"
+        np = np + 1
+        parts(np) = """" & k & """:{" & symPart & "}"
     Next k
 
-    path = ThisWorkbook.Path & Application.PathSeparator & EXPORT_FILE
+    path = ThisWorkbook.Path & Application.PathSeparator & fileName
     f = FreeFile
     Open path For Output As #f
-    Print #f, "window.SCANNER_DATA={""source"":""KuCoin"",""generatedUtc"":" & Num(NowUtcTs()) & _
-              ",""workbook"":""" & ThisWorkbook.Name & """,""symbols"":{" & parts & "}};"
+    Print #f, "window." & varName & "={""source"":""KuCoin"",""generatedUtc"":" & Num(NowUtcTs()) & _
+              ",""workbook"":""" & ThisWorkbook.Name & """,""symbols"":{" & Join(parts, ",") & "}};"
     Close #f
-
-    wsCfg.Range(P_EXPORT).Value = path
-    ExportForApp = path
+    If coreOnly Then wsCfg.Range(P_EXPORT).Value = path Else wsCfg.Range(P_SCAN).Value = Format$(Now, "yyyy-mm-dd hh:mm") & "  (" & syms.Count & " coins)"
+    ExportFile = path
 End Function
 
 Private Function Num(v As Variant) As String

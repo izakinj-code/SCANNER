@@ -30,15 +30,16 @@ function loadScript() {
   const sc = document.createElement('script');
   sc.id = 'dataScript'; sc.src = 'ScannerData.js?t=' + Date.now();
   sc.onload = () => { if (window.SCANNER_DATA) onData(window.SCANNER_DATA, 'ScannerData.js'); };
-  sc.onerror = () => { if (!S.data) setPill('bad', 'ScannerData.js کنار این فایل پیدا نشد'); };
+  sc.onerror = () => { if (!S.data) setPill('', 'دیتای ۹ ارز (ScannerData.js) برای بخش پیشرفته پیدا نشد — اختیاری'); };
   document.head.appendChild(sc);
 }
 $('#fileIn').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
   const rd = new FileReader();
   rd.onload = () => {
-    try { let t = rd.result.trim().replace(/^window\.SCANNER_DATA\s*=\s*/, '').replace(/;\s*$/, '');
-      S.lastGen = null; onData(JSON.parse(t), f.name);
+    try { const raw = rd.result.trim(), isScan = raw.startsWith('window.SCANNER_SCAN');
+      const t = raw.replace(/^window\.SCANNER_(DATA|SCAN)\s*=\s*/, '').replace(/;\s*$/, '');
+      if (isScan) { S.scanGen = null; onScan(JSON.parse(t)); } else { S.lastGen = null; onData(JSON.parse(t), f.name); }
     } catch (err) { alert('فایل قابل خواندن نیست: ' + err.message); }
   };
   rd.readAsText(f);
@@ -136,7 +137,7 @@ function symStatus(o) {
 const chg24 = M => { const i = M.n - 1, j = Math.max(0, i - 96); return (M.c[i] - M.c[j]) / M.c[j] * 100; };
 
 /* ---------------- auto mode + alerts ---------------- */
-$('#btnReload').onclick = () => { S.lastGen = null; loadScript(); };
+$('#btnReload').onclick = () => { S.lastGen = null; S.scanGen = null; loadScript(); loadScan(); };
 $('#btnAuto').onclick = () => {
   S.auto = !S.auto;
   if (S.auto) {
@@ -145,7 +146,7 @@ $('#btnAuto').onclick = () => {
     S.autoTimer = setInterval(() => {
       const left = Math.max(0, Math.round((S.nextCheck - Date.now()) / 1000));
       $('#btnAuto').textContent = `⏱ خودکار: روشن (${left}s)`;
-      if (left <= 0) { S.nextCheck = Date.now() + 60000; loadScript(); }
+      if (left <= 0) { S.nextCheck = Date.now() + 60000; loadScript(); loadScan(); }
     }, 1000);
     $('#btnAuto').classList.add('on');
   } else {
@@ -186,6 +187,7 @@ function showTab(id) {
   if (id === 'bt') { drawEquity(); if (S.portRes) runPort(); }
   if (id === 'ana') redrawReportCharts();
   if (id === 'lv') renderLV();
+  if (id === 'jr') renderJr();
 }
 function selectSym(sym) { S.sel = sym; LS.set('scanner.sel', sym); S.replayM = null; S.focusTrade = null; refreshPill(); renderWatchlist(); renderReport(); drawChart(); }
 
@@ -876,8 +878,10 @@ $('#helpBody').innerHTML = `
 <p class="amber">این ابزار کمک‌تحلیلی است و توصیه‌ی مالی نیست. نتایج بک‌تست روی ۶ ماه دیتا محدود است.</p>`;
 
 /*__EXT__ ui_ext*/
+/*__EXT__ ui_scan*/
 /* ---------------- init ---------------- */
 renderSettings();
+loadScan();
 loadScript();
 if (LS.get('scanner.auto', false)) $('#btnAuto').click();
 })();
